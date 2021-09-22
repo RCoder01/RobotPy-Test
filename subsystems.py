@@ -31,8 +31,8 @@ class Drivetrain(commands2.Subsystem):
     def arcadeDrive(self, forward: float, turning: float) -> None:
         self.drive.arcadeDrive(forward, turning)
     
-    def tankDrive(self, forward: float, turning: float) -> None:
-        self.drive.tankDrive(forward, turning)
+    def tankDrive(self, leftSpeed: float, rightSpeed: float, squareInputs: bool = True) -> None:
+        self.drive.tankDrive(leftSpeed, rightSpeed, squareInputs)
 
 '''
 class Elevator(commands2.PIDSubsystem):
