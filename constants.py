@@ -1,7 +1,9 @@
 
 class Constant():
-    def __setattr__(self, name: str, value) -> None:
-        pass
+    def __new__(cls, *args, **kwargs):
+        """Prevent constants classes from being instantiated"""
+
+        raise TypeError('Constant cannot be instantiated')
 
 class Interface(Constant):
     kDriverControllerPort = 0
