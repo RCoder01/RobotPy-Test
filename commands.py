@@ -50,13 +50,11 @@ class Drivetrain:
                 deadzone(self.leftPowerSupplier()),
                 deadzone(self.rightPowerSupplier()),
             )
-            return super().execute()
         
         def end(self, interrupted: bool) -> None:
             """
             """
             self.drivetrain.tankDrive(0, 0)
-            return super().end(interrupted)
         
         def isFinished(self) -> bool:
             return False

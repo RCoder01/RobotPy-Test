@@ -1,6 +1,15 @@
+from collections import namedtuple
 from typing import _T, Any, Type
 
 
+class _Constants_Set():
+    def __init__(values: dict = {}):
+        for k, v in values.items():
+            if not isinstance(k, str):
+                raise TypeError("Constant keys must be of type 'str'")
+            
+
+'''
 class _BaseConstant():
     def __new__(cls: Type[_T]) -> _T:
         """Prevent constants classes from being instantiated"""
@@ -46,3 +55,4 @@ class Drivetrain():
 class Elevator():
     kMotorIDs = ()
     kPIDConstants = {'Kp': 0, 'Ki': 0, 'Kd': 0}
+'''
