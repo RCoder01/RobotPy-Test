@@ -2,13 +2,14 @@ from math import pow
 
 
 class unit_float(float):
-    '''A floating point number value between -1 and 1'''
+    """A floating point number value between -1 and 1"""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if not(-1 <= self <= 1):
             raise AttributeError('unit_float must be in range [-1, 1]')
         
+
 def deadzone(
     input: unit_float,
     power: float = 2,
@@ -17,7 +18,7 @@ def deadzone(
     higherDeadzone: unit_float = 0.1,
     higherMaxzone: unit_float = 1,
     ) -> unit_float:
-    '''
+    """
     Highly customizable deadzone function, 
     Follows equations at https://www.desmos.com/calculator/yt5brsfh1m
 
@@ -31,7 +32,7 @@ def deadzone(
     -1 <= lowerMaxzone < lowerDeadzone <= 0 <= higherDeadzone < higherMaxzone <= 1
 
     :returns: Input modified by the different parameters
-    '''
+    """
     if not(-1 <= lowerMaxzone < lowerDeadzone <= 0 <= higherDeadzone < higherMaxzone <= 1):
         raise ValueError('The following must be true:-1 <= lowerMaxzone < lowerDeadzone <= 0 <= higherDeadzone < higherMaxzone <= 1')
     if not(power >= 0):
