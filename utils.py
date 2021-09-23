@@ -1,6 +1,10 @@
 from math import pow
 
 
+class container():
+    pass
+
+
 class unit_float(float):
     """A floating point number value between -1 and 1"""
 

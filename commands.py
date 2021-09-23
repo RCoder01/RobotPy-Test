@@ -1,5 +1,7 @@
-from commands2._impl import SubsystemBase
+from utils import deadzone, unit_float
 import subsystems
+
+from collections.abc import Callable
 
 import commands2
 
@@ -21,17 +23,40 @@ class AutonomousCommand(commands2.CommandBase):
 
 class Drivetrain:
     class default(commands2.CommandBase):
-        def __init__(self, drivetrain: subsystems.Drivetrain):
+        def __init__(
+            self, 
+            drivetrain: subsystems.Drivetrain, 
+            leftPowerSupplier: Callable[[], unit_float], 
+            rightPowerSupplier: Callable[[], unit_float],
+            ) -> None:
+            """
+            Sets drivetrain to arcade drive
+            """
+
+            self.drivetrain = drivetrain
+            self.leftPowerSupplier = leftPowerSupplier
+            self.rightPowerSupplier = rightPowerSupplier
             self.addRequirements(drivetrain)
         
         def initialize(self) -> None:
             return super().initialize()
         
         def execute(self) -> None:
+            """
+            Uses power suppliers to tankdrive the robot
+            """
+            #8======D
+            self.drivetrain.tankDrive(
+                deadzone(self.leftPowerSupplier()),
+                deadzone(self.rightPowerSupplier()),
+            )
             return super().execute()
         
         def end(self, interrupted: bool) -> None:
+            """
+            """
+            self.drivetrain.tankDrive(0, 0)
             return super().end(interrupted)
         
         def isFinished(self) -> bool:
-            return super().isFinished()
+            return False

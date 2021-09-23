@@ -1,4 +1,5 @@
 import constants
+from utils import container
 
 import commands2
 import ctre
@@ -7,8 +8,9 @@ import wpilib.controller
 import wpilib.drive
 
 
-class container:
+class SingletonSubsystem(object):
     pass
+
 
 class Drivetrain(commands2.Subsystem):
 
