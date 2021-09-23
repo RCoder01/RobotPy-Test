@@ -1,18 +1,48 @@
+from typing import _T, Any, Type
 
-class Constant():
-    def __new__(cls, *args, **kwargs):
+
+class _BaseConstant():
+    def __new__(cls: Type[_T]) -> _T:
         """Prevent constants classes from being instantiated"""
 
         raise TypeError('Constant cannot be instantiated')
+    
+    def __setattr__(self, name: str, value: Any) -> None:
+        pass
 
-class Interface(Constant):
+
+class _Constant():
+    def __init__(self, value):
+        self._value = value
+    
+    def __get__(self, obj, objtype=None):
+        return self._value
+
+    def __set__(self, obj, value):
+        raise AttributeError('Constants cannot be changed')
+
+
+def _ConstantClass(cls) -> object:
+    default_dict = type('', (), {}).__dict__.keys()
+    unique_attrs = [attr for attr in cls.__dict__.keys() if attr not in default_dict]
+    
+    return type(
+        cls.__name__,
+        (_BaseConstant,),
+        {attr: _Constant(getattr(cls, attr)) for attr in unique_attrs},
+    )()
+
+@_ConstantClass
+class Interface():
     kDriverControllerPort = 0
     kManipControllerPort = 1
 
-class Drivetrain(Constant):
-    kLeftMotorIDs = []
-    kRightMotorIDs = []
+@_ConstantClass
+class Drivetrain():
+    kLeftMotorIDs = ()
+    kRightMotorIDs = ()
 
-class Elevator(Constant):
-    kMotorIDs = []
+@_ConstantClass
+class Elevator():
+    kMotorIDs = ()
     kPIDConstants = {'Kp': 0, 'Ki': 0, 'Kd': 0}
