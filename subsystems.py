@@ -1,6 +1,7 @@
 import constants
 
 from types import SimpleNamespace
+from typing import Type, _T
 
 import commands2
 import ctre
@@ -10,7 +11,10 @@ import wpilib.drive
 
 
 class SingletonSubsystem(object):
-    pass
+    def __new__(cls: Type[_T]) -> _T:
+        if cls is SingletonSubsystem:
+            raise TypeError('SingetonSubsystem cannot be instantiated directly')
+        return super().__new__(cls)
 
 
 class Drivetrain(commands2.Subsystem):
