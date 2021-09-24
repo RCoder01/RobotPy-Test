@@ -51,6 +51,22 @@ class _Constant():
     def __setattr__(self, name: str, value: Any) -> None:
         raise AttributeError('Constants cannot be changed')
 
+#https://www.codeproject.com/Articles/1227368/Python-Readonly-Attributes-Complete-Solution
+class _ReadonlyMetaclass(type):
+    def __new__(mcls, cls, bases, clsdict):
+        def getMclsAttr(attr):
+            return lambda cls: type(cls).attributeContainer[attr]
+        clone = dict(clsdict)
+        ReadonlyAttrs = {}
+        for name, value in clone.items():
+            if value[:2] == '__' and value[-2:] == '__':
+                continue
+            ReadonlyAttrs[name] = value
+            aProperty = property(getAttrFromMetaclass(name))
+            setattr(NewMetaclass, name, aProperty)
+            classdict[name] = aProperty
+            classdict.pop(name, None)               
+        return type.__new__(NewMetaclass, classname, bases, classdict)
 '''
 class _BaseConstant():
     def __new__(cls: Type[_T]) -> _T:
@@ -98,3 +114,5 @@ class Elevator():
     kMotorIDs = ()
     kPIDConstants = {'Kp': 0, 'Ki': 0, 'Kd': 0}
 '''
+
+if __name__ == '__main__':
