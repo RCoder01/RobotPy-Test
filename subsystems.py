@@ -11,6 +11,10 @@ import wpilib.drive
 
 
 class SingletonSubsystem(object):
+    def __init_subclass__(cls) -> None:
+        
+        return super().__init_subclass__()
+
     def __new__(cls: Type[_T]) -> _T:
         if cls is SingletonSubsystem:
             raise TypeError('SingetonSubsystem cannot be instantiated directly')
