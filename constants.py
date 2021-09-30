@@ -1,12 +1,50 @@
-from typing import Any, Iterator, Sequence, Union, overload, _T
+from typing import Any, Iterator, Sequence, Union, final, overload, _T,Callable
 
 
-class _ConstantClass(): ...
+'''???'''
+class _ConstantClass(): ... 
+
+
+class _Constant():
+    def __init__(self, value):
+        self._value = value
+    
+    def __get__(self, obj, objtype=None):
+        return self._value
+
+    def __set__(self, obj, value):
+        raise AttributeError('Constants cannot be changed')
 
 
 class _ConstantDict():
+    '''
+    Dictionary-like object which stores key-value pairs
+
+    Values can be accessed using the following notations: 
+    ConstantDictObject[key],
+    ConstantDictObject.key
+
+    When the ConstantDict object is initialized, any nested dictionaries 
+    (dictionary values) 
+    are automatically converted to other ConstantDict objects
+
+    Nested values can be accessed with the following notations 
+    (works for more than two as well):
+    ConstantDictObject[key1][key2],
+    ConstantDictObject[key1, key2],
+    ConstantDictObject[(key1, key2)],
+    ConstantDictObject.key1.key2
+
+    ConstantDictObject.key1 returns another ConstantDict object 
+    with only the nested values
+    '''
+
     @overload
     def __init__(self, values: dict = {}):
+        '''
+        Initialize a constants dictionary from a preexisting dictionary;
+        Keys must be of type str
+        '''
         self._consts = {}
         for k, v in values.items():
             
@@ -15,7 +53,7 @@ class _ConstantDict():
                 raise TypeError("Constant keys must be of type 'str'")
             
             if isinstance(v, dict):
-                self._consts[k] = _Constant(v)
+                self._consts[k] = _ConstantDict(v)
             elif isinstance(v, list):
                 self._consts[k] = tuple(v)
             else:
@@ -29,14 +67,20 @@ class _ConstantDict():
     
     @overload
     def __init__(self, *args: Union[list[Sequence[str, Any]], tuple[Sequence[str, Any]]]):
+        '''
+        Initialize a constants dictionary from a list/tuple of key-value pairs;
+        Keys must be of type str
+        '''
         self.__init__(dict(args))
 
     @overload
     def __getitem__(self, name: str) -> Any:
+        '''Get item from str key'''
         return self._consts[name]
 
     @overload
     def __getitem__(self, name: tuple[str]) -> Any:
+        '''Get nested item from tuple of str keys'''
         if len(name) == 1:
             return self[name[0]]
         return self[name[0]][name[1:]]
@@ -71,7 +115,7 @@ class _ConstantDict():
     def __eq__(self, other: Any):
         if isinstance(other, dict):
             return self.__dict__() == other
-        if isinstance(other, _Constant):
+        if isinstance(other, _ConstantDict):
             return self.__dict__() == other.__dict__()
 
 
@@ -116,32 +160,94 @@ class _ReadonlyMetaclass(type):
         )
 
 
-class _ReadonlyBaseClass(metaclass=_ReadonlyMetaclass): ...
+class _ReadonlyMeta(type):
+    '''
+    Ensures attributes of a class cannot be modified
+    '''
+    def __setattr__(self, name: str, value: Any) -> None:
+        raise AttributeError('Readonly class cannot be modified')
+    
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError('Readonly class cannot be modified')
+
+
+class _ReadonlyBase(metaclass=_ReadonlyMeta): ...
 
 '''
-class Readonly(type):
+class _StaticClass(type):
+    def __new__(mcls, clsname, bases, clsdict: dict):
+        pass
+'''
 
-    class Attribute(object):
-        def __init__(self, value):
-            self.value = value
+'''
+def StaticClass(cls):
+    mcls = type(cls)
+    attrs = cls.__dict__
+
+    def new():
+        raise TypeError('Static class cannot be instantiated')
+    cls.__new__ = new
+    return cls
+'''
+
+def _StaticClass(_class: object):
+    mapping = {
+        '__setattr__': '_setattr',
+        '__getattr__': '_getattr',
+        '__getattribute__': '_getattribute'
+    }
+    restricted_methods = {
+        '__init__',
+        '__new__'
+    }
+
+    class StaticMeta(type):
+        _cls = _class
+        _mapping = mapping
+        _restricted_methods = restricted_methods
+
+
+        def _setattr(cls, name, value) -> None:
+            setattr(cls, name, value)
+            
+        def _getattr(cls, name: str) -> Any:
+            return getattr(cls, name)
+
+        def _getattribute(cls, name: str) -> Any:
+            return cls.__getattribute__(name)
+
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            if name in self._mapping:
+                setattr(self, self._mapping[name], value)
+            elif name in self._restricted_methods:
+                raise AttributeError(f'Static Class cannot have a {name} method')
+            else:
+                self._setattr(self._cls, name, value)
+        
+        def __getattr__(self, name: str) -> Any:
+            return self._getattr(self._cls, name)
+
+        def __getattribute__(child, name: str) -> Any:
+            self = type(child)
+            if name in self._mapping:
+                return self.__dict__[name].__get__(self)
+            return self._getattribute(self._cls, name)
     
-    def __new__(metaclass, classname, bases, classdict):
-        class NewMetaclass(metaclass):
-            attributeContainer = {}
-        def getAttrFromMetaclass(attr):
-            return lambda cls: type(cls).attributeContainer[attr]
-        clone = dict(classdict)
-        for name, value in clone.items():
-            if not isinstance(value, metaclass.Attribute):
-                continue;
-            NewMetaclass.attributeContainerName[name] = value.value
-            aProperty = property(getAttrFromMetaclass(name))
-            setattr(NewMetaclass, name, aProperty)
-            classdict[name] = aProperty
-            classdict.pop(name, None)               
-        return type.__new__(NewMetaclass, classname, bases, classdict)
-# '''
 
+    class StaticChild(metaclass=StaticMeta):
+        def __getattribute__(self, name: str) -> Any:
+            return getattr(type(self), name)
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            setattr(type(self), name, value)
+
+
+    StaticChild.__doc__ = _class.__doc__
+
+    return StaticChild
+
+'''
 class _BaseConstant(_ReadonlyBaseClass):
     
     def __new__(cls: Any) -> None:
@@ -151,31 +257,20 @@ class _BaseConstant(_ReadonlyBaseClass):
     
     def __setattr__(self, name: str, value: Any) -> None:
         pass
+'''
 
 
-class _Constant():
-    def __init__(self, value):
-        self._value = value
-    
-    def __get__(self, obj, objtype=None):
-        return self._value
-
-    def __set__(self, obj, value):
-        raise AttributeError('Constants cannot be changed')
-
-
+'''
 def _ConstantClass(cls) -> _BaseConstant:
     default_dict = type('', (), {}).__dict__.keys()
     unique_attrs = [attr for attr in cls.__dict__.keys() if attr not in default_dict]
-    
-    
 
     return type(
         cls.__name__,
         (_BaseConstant,),
         {attr: _Constant(getattr(cls, attr)) for attr in unique_attrs},
     )()
-
+'''
 
 def Static(cls) -> object:
     return cls()
