@@ -121,43 +121,50 @@ class _ConstantDict():
 
 #https://www.codeproject.com/Articles/1227368/Python-Readonly-Attributes-Complete-Solution
 class _ReadonlyMetaclass(type):
+    '''
+    Creates child metaclass with readonly attrubutes
+    '''
     def __new__(mcls, clsname, bases, clsdict: dict):
+        #Given an attribute, return a getter method
         def getMclsAttr(attr):
+            #Getter takes a class and returns value from metaclass
             return lambda cls: type(cls)._attributeContainer[attr]
+        
         readonlyAttrs = {}
         readonlyProperties = {}
+
+        #Adds clsdict dictionary items to metaclass container
         for name, value in dict(clsdict).items():
-            if value[:2] == '__' or value[:len(clsname) + 3] == f'_{clsname}__':
+            #Ignore dunder and private names
+            if name[:2] == '__'\
+                 or name[:len(clsname) + 3] == f'_{clsname}__'\
+                 or name == '_attributeContainer':
                 continue
-            if value == '_attributeContainer':
-                raise ValueError("'_attributeContainer' is a reserved key name")
+            #Adds value and getter methods to containers
             readonlyAttrs[name] = value
             readonlyProperties[name] = property(getMclsAttr(name))
+            #Remove item from clsdict (not removed if attribute is ignored)
             try: 
                 clsdict.pop(name)
             except KeyError:
                 pass
-        childClassName = '_ReadonlyMetaclassChild'
-        localQualname = '.'.join(getMclsAttr.__qualname__.split('.')[:-2])
-        childQualname = f'{localQualname}.{childClassName}'
-        returnQualname = f'{childQualname}.{clsname}'
-        return type.__new__(
-            type(
-                childClassName,
-                (mcls,),
-                {
-                    '_attributeContainer': readonlyAttrs,
-                    '__qualname__': childClassName,
-                    **readonlyProperties
-                },
-            ),
-            clsname, 
-            bases, 
+        #Creates child metaclass which has attributes
+        _childMetaclass = type(
+            '_childMetaclass',
+            (mcls,),
             {
-                '__qualname__': returnQualname,
-                **clsdict,
+                '_attributeContainer': readonlyAttrs,
+                **readonlyProperties
             },
         )
+        #Creates new return class with child metaclass as metaclass
+        _returnClass = type.__new__(
+            _childMetaclass,
+            clsname,
+            bases, 
+            {**clsdict},
+        )
+        return _returnClass
 
 
 class _ReadonlyMeta(type):
