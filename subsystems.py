@@ -1,6 +1,5 @@
 from __future__ import annotations
-from types import SimpleNamespace
-from typing import Type
+from types import SimpleNamespace, _T
 
 import commands2
 import ctre
@@ -11,12 +10,12 @@ import wpilib.drive
 import constants
 
 
-class SingletonSubsystem(object):
+class SingletonSubsystem():
     def __init_subclass__(cls) -> None:
         
         return super().__init_subclass__()
 
-    def __new__(cls: Type[SingletonSubsystem]) -> SingletonSubsystem:
+    def __new__(cls: _T, *args, **kwargs) -> _T:
         if cls is SingletonSubsystem:
             raise TypeError('SingetonSubsystem cannot be instantiated directly')
         return super().__new__(cls)
