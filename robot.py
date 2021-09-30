@@ -1,9 +1,9 @@
-import constants
-import subsystems
-
 import commands2
 import wpilib
 import wpilib.drive
+
+import constants
+import subsystems
 
 
 class Robot(commands2.TimedCommandRobot):

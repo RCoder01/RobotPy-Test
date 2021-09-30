@@ -1,9 +1,10 @@
-from utils import deadzone, unit_float
-import subsystems
-
 from collections.abc import Callable
 
 import commands2
+
+from utils import deadzone, unit_float
+import subsystems
+
 
 class AutonomousCommand(commands2.CommandBase):
     def __init__(self, drivetrain: subsystems.Drivetrain):
