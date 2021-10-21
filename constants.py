@@ -1,7 +1,8 @@
-from typing import Any, Iterator, Sequence, Union, overload
+import abc
+from typing import Any, Iterator, Sequence, Type, Union, overload
 
 
-'''???'''
+"""???"""
 class _ConstantClass(): ... 
 
 
@@ -17,7 +18,7 @@ class _Constant():
 
 
 class _ConstantDict():
-    '''
+    """
     Dictionary-like object which stores key-value pairs
 
     Values can be accessed using the following notations: 
@@ -37,20 +38,38 @@ class _ConstantDict():
 
     ConstantDictObject.key1 returns another ConstantDict object 
     with only the nested values
-    '''
+    """
 
     @overload
-    def __init__(self, values: dict = {}):
-        '''
+    def __init__(self, values: dict[str, Any] = None):
+        """
         Initialize a constants dictionary from a preexisting dictionary;
         Keys must be of type str
-        '''
+        """
+    
+    @overload
+    def __init__(self, *args: Union[list[Sequence[str, Any]], tuple[Sequence[str, Any]]]):
+        """
+        Initialize a constants dictionary from a list/tuple of key-value pairs;
+        Keys must be of type str
+        """
+
+    def __init__(self, *args) -> None:
+        try:
+            if not args:
+                values = {}
+            elif len(args) == 1:
+                values = dict(args[0]) or {}
+            else:
+                values = dict(args)
+        except TypeError:
+            raise TypeError('ConstantDict cannot be initialized with given argument(s)')
         self._consts = {}
         for k, v in values.items():
             
             #Key must be a string
             if not isinstance(k, str):
-                raise TypeError("Constant keys must be of type 'str'")
+                raise TypeError("ConstantDict keys must be of type 'str'")
             
             if isinstance(v, dict):
                 self._consts[k] = _ConstantDict(v)
@@ -64,32 +83,30 @@ class _ConstantDict():
             if isinstance(v, _Constant):
                 v = dict(_Constant)
             self._dict[k] = v
-    
-    @overload
-    def __init__(self, *args: Union[list[Sequence[str, Any]], tuple[Sequence[str, Any]]]):
-        '''
-        Initialize a constants dictionary from a list/tuple of key-value pairs;
-        Keys must be of type str
-        '''
-        self.__init__(dict(args))
 
     @overload
     def __getitem__(self, name: str) -> Any:
-        '''Get item from str key'''
-        return self._consts[name]
+        """Get item from str key"""
 
     @overload
     def __getitem__(self, name: tuple[str]) -> Any:
-        '''Get nested item from tuple of str keys'''
-        if len(name) == 1:
-            return self[name[0]]
-        return self[name[0]][name[1:]]
+        """Get nested item from tuple of str keys"""
 
-    def __dict__(self) -> dict:
+    def __getitem__(self, name) -> Any:
+        if isinstance(name, str):
+            return self._consts[name]
+        try:
+            if len(name) == 1:
+                return self[name[0]]
+            return self[name[0]][name[1:]]
+        except (TypeError, IndexError):
+            raise IndexError('Index is not of type str or sequence[str]')
+
+    def _getdict(self) -> dict:
         return self._dict
 
     def __iter__(self) -> Iterator:
-        return self.__dict__().items()
+        return self._getdict().items()
 
     def __str__(self) -> Any:
         return str(self._consts)
@@ -107,23 +124,27 @@ class _ConstantDict():
         raise AttributeError('Constants cannot be deleted')
 
     def __contains__(self, name: str) -> Any:
-        return name in self.__dict__()
+        return name in self._getdict()
     
     def __repr__(self) -> str:
-        return str(self.__dict__())
+        return str(self._getdict())
     
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, dict):
-            return self.__dict__() == other
+            return self._getdict() == other
         if isinstance(other, _ConstantDict):
-            return self.__dict__() == other.__dict__()
+            return self._getdict() == other._getdict()
+        try:
+            return self._getdict() == _ConstantDict(other)._getdict()
+        except TypeError:
+            return False
 
 
 #https://www.codeproject.com/Articles/1227368/Python-Readonly-Attributes-Complete-Solution
 class _ReadonlyMetaclass(type):
-    '''
+    """
     Creates child metaclass with readonly attrubutes
-    '''
+    """
     def __new__(mcls, clsname, bases, clsdict: dict):
         #Given an attribute, return a getter method
         def getMclsAttr(attr):
@@ -168,9 +189,9 @@ class _ReadonlyMetaclass(type):
 
 
 class _ReadonlyMeta(type):
-    '''
+    """
     Ensures attributes of a class cannot be modified
-    '''
+    """
     def __setattr__(self, name: str, value: Any) -> None:
         raise AttributeError('Readonly class cannot be modified')
     
@@ -180,13 +201,13 @@ class _ReadonlyMeta(type):
 
 class _ReadonlyBase(metaclass=_ReadonlyMeta): ...
 
-'''
+"""
 class _StaticClass(type):
     def __new__(mcls, clsname, bases, clsdict: dict):
         pass
-'''
+"""
 
-'''
+"""
 def StaticClass(cls):
     mcls = type(cls)
     attrs = cls.__dict__
@@ -195,7 +216,7 @@ def StaticClass(cls):
         raise TypeError('Static class cannot be instantiated')
     cls.__new__ = new
     return cls
-'''
+"""
 
 def _StaticClass(_class: object):
     mapping = {
@@ -254,7 +275,7 @@ def _StaticClass(_class: object):
 
     return StaticChild
 
-'''
+"""
 class _BaseConstant(_ReadonlyBaseClass):
     
     def __new__(cls: Any) -> None:
@@ -264,10 +285,10 @@ class _BaseConstant(_ReadonlyBaseClass):
     
     def __setattr__(self, name: str, value: Any) -> None:
         pass
-'''
+"""
 
 
-'''
+"""
 def _ConstantClass(cls) -> _BaseConstant:
     default_dict = type('', (), {}).__dict__.keys()
     unique_attrs = [attr for attr in cls.__dict__.keys() if attr not in default_dict]
@@ -277,7 +298,7 @@ def _ConstantClass(cls) -> _BaseConstant:
         (_BaseConstant,),
         {attr: _Constant(getattr(cls, attr)) for attr in unique_attrs},
     )()
-'''
+"""
 
 def Static(cls) -> object:
     return cls()
