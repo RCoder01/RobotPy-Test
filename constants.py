@@ -1,60 +1,47 @@
 import abc
+from collections import Hashable
 from typing import Any, Iterator, Sequence, Type, Union, overload
 
 
-"""???"""
-class _ConstantClass(): ... 
-
-
-class _Constant():
-    def __init__(self, value):
-        self._value = value
-    
-    def __get__(self, obj, objtype=None):
-        return self._value
-
-    def __set__(self, obj, value):
-        raise AttributeError('Constants cannot be changed')
-
-
-class _ConstantDict():
+class ReadonlyDict():
     """
     Dictionary-like object which stores key-value pairs
 
     Values can be accessed using the following notations: 
-    ConstantDictObject[key],
-    ConstantDictObject.key
+    ReadonlyDictObject[key],
+    ReadonlyDictObject.key
 
-    When the ConstantDict object is initialized, any nested dictionaries 
+    When the ReadonlyDict object is initialized, any nested dictionaries 
     (dictionary values) 
-    are automatically converted to other ConstantDict objects
+    are automatically converted to other ReadonlyDict objects
 
     Nested values can be accessed with the following notations 
     (works for more than two as well):
-    ConstantDictObject[key1][key2],
-    ConstantDictObject[key1, key2],
-    ConstantDictObject[(key1, key2)],
-    ConstantDictObject.key1.key2
+    ReadonlyDictObject[key1][key2],
+    ReadonlyDictObject[key1, key2],
+    ReadonlyDictObject[(key1, key2)],
+    ReadonlyDictObject.key1.key2
 
-    ConstantDictObject.key1 returns another ConstantDict object 
+    ReadonlyDictObject.key1 returns another ReadonlyDict object 
     with only the nested values
     """
 
     @overload
-    def __init__(self, values: dict[str, Any] = None):
+    def __init__(self, values: dict[Hashable, Any] = None):
         """
-        Initialize a constants dictionary from a preexisting dictionary;
+        Initialize a read-only dictionary from a preexisting dictionary;
         Keys must be of type str
         """
     
     @overload
-    def __init__(self, *args: Union[list[Sequence[str, Any]], tuple[Sequence[str, Any]]]):
+    def __init__(self, *args: Sequence[tuple[Hashable, Any]]):
         """
-        Initialize a constants dictionary from a list/tuple of key-value pairs;
-        Keys must be of type str
+        Initialize a read-only dictionary from a list/tuple of key-value pairs;
+        Keys must be hashable
         """
 
     def __init__(self, *args) -> None:
+
         try:
             if not args:
                 values = {}
@@ -63,38 +50,33 @@ class _ConstantDict():
             else:
                 values = dict(args)
         except TypeError:
-            raise TypeError('ConstantDict cannot be initialized with given argument(s)')
-        self._consts = {}
-        for k, v in values.items():
-            
-            #Key must be a string
-            if not isinstance(k, str):
-                raise TypeError("ConstantDict keys must be of type 'str'")
-            
-            if isinstance(v, dict):
-                self._consts[k] = _ConstantDict(v)
-            elif isinstance(v, list):
-                self._consts[k] = tuple(v)
-            else:
-                self._consts[k] = v
+            raise TypeError('ReadonlyDict cannot be initialized with given argument(s)')
         
         self._dict = {}
-        for k, v in self._consts:
-            if isinstance(v, _Constant):
-                v = dict(_Constant)
-            self._dict[k] = v
+
+        for k, v in values.items():
+            #Key must be a string
+            if not isinstance(k, str):
+                raise TypeError("ReadonlyDict keys must be of type 'str'")
+            
+            if isinstance(v, dict):
+                self._dict[k] = ReadonlyDict(v)
+            elif isinstance(v, list):
+                self._dict[k] = tuple(v)
+            else:
+                self._dict[k] = v
 
     @overload
     def __getitem__(self, name: str) -> Any:
-        """Get item from str key"""
+        """Get item from key"""
 
     @overload
     def __getitem__(self, name: tuple[str]) -> Any:
-        """Get nested item from tuple of str keys"""
+        """Get nested item from tuple of keys"""
 
     def __getitem__(self, name) -> Any:
-        if isinstance(name, str):
-            return self._consts[name]
+        if name in self._dict:
+            return self._dict[name]
         try:
             if len(name) == 1:
                 return self[name[0]]
@@ -132,225 +114,47 @@ class _ConstantDict():
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, dict):
             return self._getdict() == other
-        if isinstance(other, _ConstantDict):
+        if isinstance(other, ReadonlyDict):
             return self._getdict() == other._getdict()
         try:
-            return self._getdict() == _ConstantDict(other)._getdict()
+            return self._getdict() == ReadonlyDict(other)._getdict()
         except TypeError:
             return False
 
 
-#https://www.codeproject.com/Articles/1227368/Python-Readonly-Attributes-Complete-Solution
-class _ReadonlyMetaclass(type):
-    """
-    Creates child metaclass with readonly attrubutes
-    """
-    def __new__(mcls, clsname, bases, clsdict: dict):
-        #Given an attribute, return a getter method
-        def getMclsAttr(attr):
-            #Getter takes a class and returns value from metaclass
-            return lambda cls: type(cls)._attributeContainer[attr]
-        
-        readonlyAttrs = {}
-        readonlyProperties = {}
-
-        #Adds clsdict dictionary items to metaclass container
-        for name, value in dict(clsdict).items():
-            #Ignore dunder and private names
-            if name[:2] == '__'\
-                 or name[:len(clsname) + 3] == f'_{clsname}__'\
-                 or name == '_attributeContainer':
-                continue
-            #Adds value and getter methods to containers
-            readonlyAttrs[name] = value
-            readonlyProperties[name] = property(getMclsAttr(name))
-            #Remove item from clsdict (not removed if attribute is ignored)
-            try: 
-                clsdict.pop(name)
-            except KeyError:
-                pass
-        #Creates child metaclass which has attributes
-        _childMetaclass = type(
-            '_childMetaclass',
-            (mcls,),
-            {
-                '_attributeContainer': readonlyAttrs,
-                **readonlyProperties
-            },
-        )
-        #Creates new return class with child metaclass as metaclass
-        _returnClass = type.__new__(
-            _childMetaclass,
-            clsname,
-            bases, 
-            {**clsdict},
-        )
-        return _returnClass
-
-
-class _ReadonlyMeta(type):
-    """
-    Ensures attributes of a class cannot be modified
-    """
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise AttributeError('Readonly class cannot be modified')
-    
-    def __delattr__(self, name: str) -> None:
-        raise AttributeError('Readonly class cannot be modified')
-
-
-class _ReadonlyBase(metaclass=_ReadonlyMeta): ...
-
-"""
-class _StaticClass(type):
-    def __new__(mcls, clsname, bases, clsdict: dict):
-        pass
-"""
-
-"""
-def StaticClass(cls):
-    mcls = type(cls)
-    attrs = cls.__dict__
-
-    def new():
-        raise TypeError('Static class cannot be instantiated')
-    cls.__new__ = new
-    return cls
-"""
-
-def _StaticClass(_class: object):
-    mapping = {
-        '__setattr__': '_setattr',
-        '__getattr__': '_getattr',
-        '__getattribute__': '_getattribute'
-    }
-    restricted_methods = {
-        '__init__',
-        '__new__'
-    }
-
-    class StaticMeta(type):
-        _cls = _class
-        _mapping = mapping
-        _restricted_methods = restricted_methods
-
-
-        def _setattr(cls, name, value) -> None:
-            setattr(cls, name, value)
-            
-        def _getattr(cls, name: str) -> Any:
-            return getattr(cls, name)
-
-        def _getattribute(cls, name: str) -> Any:
-            return cls.__getattribute__(name)
-
-
-        def __setattr__(self, name: str, value: Any) -> None:
-            if name in self._mapping:
-                setattr(self, self._mapping[name], value)
-            elif name in self._restricted_methods:
-                raise AttributeError(f'Static Class cannot have a {name} method')
-            else:
-                self._setattr(self._cls, name, value)
-        
-        def __getattr__(self, name: str) -> Any:
-            return self._getattr(self._cls, name)
-
-        def __getattribute__(child, name: str) -> Any:
-            self = type(child)
-            if name in self._mapping:
-                return self.__dict__[name].__get__(self)
-            return self._getattribute(self._cls, name)
-    
-
-    class StaticChild(metaclass=StaticMeta):
-        def __getattribute__(self, name: str) -> Any:
-            return getattr(type(self), name)
-
-        def __setattr__(self, name: str, value: Any) -> None:
-            setattr(type(self), name, value)
-
-
-    StaticChild.__doc__ = _class.__doc__
-
-    return StaticChild
-
-"""
-class _BaseConstant(_ReadonlyBaseClass):
-    
-    def __new__(cls: Any) -> None:
-        """Prevent constants classes from being instantiated"""
-
-        raise TypeError('Constant cannot be instantiated')
-    
-    def __setattr__(self, name: str, value: Any) -> None:
-        pass
-"""
-
-
-"""
-def _ConstantClass(cls) -> _BaseConstant:
-    default_dict = type('', (), {}).__dict__.keys()
-    unique_attrs = [attr for attr in cls.__dict__.keys() if attr not in default_dict]
-
-    return type(
-        cls.__name__,
-        (_BaseConstant,),
-        {attr: _Constant(getattr(cls, attr)) for attr in unique_attrs},
-    )()
-"""
-
-def Static(cls) -> object:
-    return cls()
-
-
-@_ConstantClass
 class Interface():
     kDriverControllerPort = 0
     kManipControllerPort = 1
 
-@_ConstantClass
+
 class Drivetrain():
     kLeftMotorIDs = ()
     kRightMotorIDs = ()
 
-@_ConstantClass
+
 class Elevator():
     kMotorIDs = ()
     kPIDConstants = {'Kp': 0, 'Ki': 0, 'Kd': 0}
 
 
 if __name__ == '__main__':
-    #Static instance (final)
-    #Nonfinal values
-    #Able to add attributes
-    @Static
-    class A():
-        a = 2
-        b = 3
     
-    #Static instance (final)
-    #Final values
-    #Unable to add values
-    B = _ConstantDict({
-        'a': 2,
-        'b': 3,
+    test_instance = ReadonlyDict({
+        'first': 1,
+        'second': 2,
+        'string': 'abcde',
+        'int_list': [5, 6, 7, 8, 9]
+        ''
     })
 
+    #Normal lookup
+    assert test_instance['first'] == 1
+    assert test_instance['string'] == 'abcde'
+
+    
+
     #Equivalent to B
-    C = _ConstantDict({
+    C = ReadonlyDict({
         ('a', 2),
         ['b', 3],
     })
-
-    #Static class (nonfinal)
-    #Final values
-    #Able to add values
-    class D(metaclass=_ReadonlyMetaclass):
-        a = 2
-        b = 3
-    
-    #Equivalent to D
-    class E(_ReadonlyBaseClass):
-        a = 2
-        b = 3
