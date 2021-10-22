@@ -3,6 +3,30 @@ from collections import Hashable
 from typing import Any, Iterator, Sequence, Type, Union, overload
 
 
+class Immutable():
+    def __init__(self, obj: Any):
+        super().__setattr__('_obj', obj)
+    
+    def __getattribute__(self, name: str) -> Any:
+        attr = getattr(super().__getattribute__('_obj'), name)
+        if name == '__call__':
+            return attr
+        return Immutable(attr)
+    
+    def __setattr__(self, name: str, value: Any) -> None:
+        raise TypeError('Immutable object cannot be modified')
+    
+    def __repr__(self) -> str:
+        _repr = super().__repr__().split(' object at ')
+        return f'{_repr[0]} object wrapper of {repr(super().__getattribute__("_obj"))} at {_repr[1]}'
+
+def Immutable(self, obj: Any) -> Any:
+    class NewObjType(type(obj)):
+        def __setattr__(self, name: str, value: Any) -> None:
+            raise TypeError('Immutable object cannot be modified')
+    
+    return type(NewObjType)
+
 class ReadonlyDict():
     """
     Dictionary-like object which stores key-value pairs
@@ -30,18 +54,17 @@ class ReadonlyDict():
     def __init__(self, values: dict[Hashable, Any] = None):
         """
         Initialize a read-only dictionary from a preexisting dictionary;
-        Keys must be of type str
+        Keys must be hashable
         """
     
     @overload
-    def __init__(self, *args: Sequence[tuple[Hashable, Any]]):
+    def __init__(self, *args: Union[list[Sequence[str, Any]], tuple[Sequence[str, Any]]]):
         """
         Initialize a read-only dictionary from a list/tuple of key-value pairs;
         Keys must be hashable
         """
 
     def __init__(self, *args) -> None:
-
         try:
             if not args:
                 values = {}
@@ -53,7 +76,7 @@ class ReadonlyDict():
             raise TypeError('ReadonlyDict cannot be initialized with given argument(s)')
         
         self._dict = {}
-
+        
         for k, v in values.items():
             #Key must be a string
             if not isinstance(k, str):
@@ -144,7 +167,6 @@ if __name__ == '__main__':
         'second': 2,
         'string': 'abcde',
         'int_list': [5, 6, 7, 8, 9]
-        ''
     })
 
     #Normal lookup
