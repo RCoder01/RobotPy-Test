@@ -1,5 +1,4 @@
-import abc
-from collections import Hashable
+from types import MappingProxyType
 from typing import Any, Iterator, Sequence, Type, Union, overload
 
 
@@ -20,12 +19,19 @@ class Immutable():
         _repr = super().__repr__().split(' object at ')
         return f'{_repr[0]} object wrapper of {repr(super().__getattribute__("_obj"))} at {_repr[1]}'
 
-def Immutable(self, obj: Any) -> Any:
+def Immutable(obj: Any) -> Any:
     class NewObjType(type(obj)):
         def __setattr__(self, name: str, value: Any) -> None:
             raise TypeError('Immutable object cannot be modified')
     
-    return type(NewObjType)
+    if isinstance(NewObjType, type):
+        return NewObjType('ImmutableObject', obj.__bases__, vars(obj))
+    
+    return_obj = NewObjType.__new__(type(obj))
+    for attr, val in vars(obj):
+        super(NewObjType, return_obj).__setattr__(attr, val)
+    
+    return return_obj
 
 class ReadonlyDict():
     """
@@ -51,20 +57,27 @@ class ReadonlyDict():
     """
 
     @overload
-    def __init__(self, values: dict[Hashable, Any] = None):
+    def __init__(self, values: dict[str, Any] = None) -> None:
         """
         Initialize a read-only dictionary from a preexisting dictionary;
-        Keys must be hashable
+        Keys must be str
         """
     
     @overload
-    def __init__(self, *args: Union[list[Sequence[str, Any]], tuple[Sequence[str, Any]]]):
+    def __init__(self, *args: Union[list[tuple[str, Any]], tuple[tuple[str, Any]]]) -> None:
         """
         Initialize a read-only dictionary from a list/tuple of key-value pairs;
-        Keys must be hashable
+        Keys must be str
+        """
+    
+    @overload
+    def __init__(self, **kwargs) -> None:
+        """
+        New read-only dictionary initialized with the name=value pairs
+        Can also be used in addition to other initialization methods
         """
 
-    def __init__(self, *args) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         try:
             if not args:
                 values = {}
@@ -75,7 +88,9 @@ class ReadonlyDict():
         except TypeError:
             raise TypeError('ReadonlyDict cannot be initialized with given argument(s)')
         
-        self._dict = {}
+        values.update(kwargs)
+
+        object.__setattr__(self, '_dict', {})
         
         for k, v in values.items():
             #Key must be a string
@@ -98,26 +113,26 @@ class ReadonlyDict():
         """Get nested item from tuple of keys"""
 
     def __getitem__(self, name) -> Any:
-        if name in self._dict:
-            return self._dict[name]
+        if name in self._getdict():
+            return self._getdict()[name]
         try:
             if len(name) == 1:
                 return self[name[0]]
             return self[name[0]][name[1:]]
         except (TypeError, IndexError):
-            raise IndexError('Index is not of type str or sequence[str]')
+            raise IndexError(f'Index {name} is not valid')
+    
+    def __getattr__(self, name: str) -> Any:
+        return self[name]
 
     def _getdict(self) -> dict:
         return self._dict
 
     def __iter__(self) -> Iterator:
-        return self._getdict().items()
+        return self._getdict().keys()
 
     def __str__(self) -> Any:
-        return str(self._consts)
-
-    def __getattr__(self, name: str) -> Any:
-        return self[name]
+        return str(self._getdict())
 
     def __setattr__(self, name: str, value: Any) -> None:
         raise AttributeError('Constants cannot be changed')
@@ -125,14 +140,17 @@ class ReadonlyDict():
     def __setitem__(self, name: str, value: Any) -> None:
         raise AttributeError('Constants cannot be changed')
     
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError('Constants cannot be deleted')
+    
     def __delitem__(self, name: str) -> None:
         raise AttributeError('Constants cannot be deleted')
 
     def __contains__(self, name: str) -> Any:
-        return name in self._getdict()
+        return name in self._getdict().keys()
     
     def __repr__(self) -> str:
-        return str(self._getdict())
+        return f'constantdict({dict(self._getdict())})'
     
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, dict):
@@ -143,19 +161,31 @@ class ReadonlyDict():
             return self._getdict() == ReadonlyDict(other)._getdict()
         except TypeError:
             return False
+    
+    @property
+    def __dict__(self):
+        return MappingProxyType(self._getdict())
 
 
-class Interface():
+class Nonwritable(type):
+    def __setattr__(self, name: str, value: Any) -> None:
+        raise TypeError('Nonwritable attributes cannot be set')
+
+
+class ConstantsClass(metaclass=Nonwritable): ...
+
+
+class Interface(ConstantsClass):
     kDriverControllerPort = 0
     kManipControllerPort = 1
 
 
-class Drivetrain():
+class Drivetrain(ConstantsClass):
     kLeftMotorIDs = ()
     kRightMotorIDs = ()
 
 
-class Elevator():
+class Elevator(ConstantsClass):
     kMotorIDs = ()
     kPIDConstants = {'Kp': 0, 'Ki': 0, 'Kd': 0}
 
@@ -174,7 +204,6 @@ if __name__ == '__main__':
     assert test_instance['string'] == 'abcde'
 
     
-
     #Equivalent to B
     C = ReadonlyDict({
         ('a', 2),
