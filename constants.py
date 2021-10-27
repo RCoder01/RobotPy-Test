@@ -2,22 +2,19 @@ from types import MappingProxyType
 from typing import Any, Iterator, Sequence, Type, Union, overload
 
 
-class Immutable():
-    def __init__(self, obj: Any):
-        super().__setattr__('_obj', obj)
+def Immutable(obj):
+    class ImmutableType(type(obj)):
+        def __setattr__(self, name: str, value: Any) -> None:
+            raise TypeError('Immutable object cannot be modified')
     
-    def __getattribute__(self, name: str) -> Any:
-        attr = getattr(super().__getattribute__('_obj'), name)
-        if name == '__call__':
-            return attr
-        return Immutable(attr)
+    if isinstance(ImmutableType, type):
+        returnObj = ImmutableType("ImmutableTypeObject", obj.__bases__, dict(obj.__dict__))
+    else:
+        returnObj = object.__new__(ImmutableType)
+        for name, value in obj.__dict__.items():
+            object.__setattr__(returnObj, name, value)
     
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise TypeError('Immutable object cannot be modified')
-    
-    def __repr__(self) -> str:
-        _repr = super().__repr__().split(' object at ')
-        return f'{_repr[0]} object wrapper of {repr(super().__getattribute__("_obj"))} at {_repr[1]}'
+    return returnObj
 
 def Immutable(obj: Any) -> Any:
     class NewObjType(type(obj)):
