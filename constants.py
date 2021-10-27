@@ -7,7 +7,7 @@ def Immutable(obj):
         def __setattr__(self, name: str, value: Any) -> None:
             raise TypeError('Immutable object cannot be modified')
     
-    if isinstance(ImmutableType, type):
+    if isinstance(obj, type):
         returnObj = ImmutableType("ImmutableTypeObject", obj.__bases__, dict(obj.__dict__))
     else:
         returnObj = object.__new__(ImmutableType)
@@ -16,19 +16,6 @@ def Immutable(obj):
     
     return returnObj
 
-def Immutable(obj: Any) -> Any:
-    class NewObjType(type(obj)):
-        def __setattr__(self, name: str, value: Any) -> None:
-            raise TypeError('Immutable object cannot be modified')
-    
-    if isinstance(NewObjType, type):
-        return NewObjType('ImmutableObject', obj.__bases__, vars(obj))
-    
-    return_obj = NewObjType.__new__(type(obj))
-    for attr, val in vars(obj):
-        super(NewObjType, return_obj).__setattr__(attr, val)
-    
-    return return_obj
 
 class ReadonlyDict():
     """
@@ -110,20 +97,36 @@ class ReadonlyDict():
         """Get nested item from tuple of keys"""
 
     def __getitem__(self, name) -> Any:
+        if name == '_getdict':
+            return object.__getattribute__(self, name)
         if name in self._getdict():
             return self._getdict()[name]
+
         try:
-            if len(name) == 1:
-                return self[name[0]]
-            return self[name[0]][name[1:]]
-        except (TypeError, IndexError):
-            raise IndexError(f'Index {name} is not valid')
+            if not isinstance(name, tuple):
+                raise ValueError()
+            if len(name) > 1:
+                return self[name[0]][name[1:]]
+            if name[0] == name:
+                raise ValueError()
+            return self[name[0]]
+        except ValueError as e:
+            e.val = [name] + e.val if e.args else [name]
+            e.args = f'{tuple(e.val)} not found in {self}',
+            raise
+        except (TypeError, IndexError) as e:
+            new_e = ValueError(f'{tuple(name)} not found in {self}')
+            new_e.val = [name]
+            raise new_e from e
+        except RecursionError:
+            print(name)
+            raise
     
     def __getattr__(self, name: str) -> Any:
         return self[name]
 
     def _getdict(self) -> dict:
-        return self._dict
+        return object.__getattribute__(self, '_dict')
 
     def __iter__(self) -> Iterator:
         return self._getdict().keys()
@@ -193,7 +196,11 @@ if __name__ == '__main__':
         'first': 1,
         'second': 2,
         'string': 'abcde',
-        'int_list': [5, 6, 7, 8, 9]
+        'int_list': [5, 6, 7, 8, 9],
+        'dict': {
+            'negative1': -1,
+            'negative2': -2,
+        },
     })
 
     #Normal lookup
@@ -206,3 +213,8 @@ if __name__ == '__main__':
         ('a', 2),
         ['b', 3],
     })
+
+    @Immutable
+    class C:
+        abcd = 4
+        efgh = '123'
