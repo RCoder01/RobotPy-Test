@@ -1,4 +1,5 @@
 from __future__ import annotations
+from sys import meta_path
 from types import MappingProxyType, SimpleNamespace
 from typing import Any, Iterator, Sequence, Type, Union, overload
 
@@ -212,26 +213,32 @@ class ConstantsMeta(Nonwritable):
     
     #Taken practically directly from types.SimpleNamespace documentation page
     def __repr__(self) -> str:
-        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in self.__dict__.items()])})'
+        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in self.__dict__.items() if k.startswith("__")])})'
 
 
 class ConstantsClass(SimpleNamespace, metaclass=ConstantsMeta):
     """
-    Unique properties of a ConstantsClass:\n
+    Unique properties of a ConstantsClass:
+
     - Any class attributes cannot be changed or deleted;
-    new class attributes cannot be added\n
+    new class attributes cannot be added
+
     - Values can be accessed using the following notations: 
     ConstantsClass[key],
-    ConstantsClass.key\n
+    ConstantsClass.key
+
     - Nested values can be accessed with the following notations
     if a class contains a nested class that inherits from ConstantsClass
     (works for more than two as well):
     ConstantsClass[key1][key2],
     ConstantsClass[key1, key2],
     ConstantsClass[(key1, key2)],
-    ConstantsClass.key1.key2\n
+    ConstantsClass.key1.key2
+
     - Initializing a class returns the class itself, not an instance
-    - Provides a useful repr (equivalent to that of types.SimpleNamespace)
+
+    - Provides a useful repr
+    (similar to that of types.SimpleNamespace, except attributes with two leading underscores)
     """
     def __new__(cls: ConstantsClass) -> ConstantsClass:
         return cls
