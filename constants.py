@@ -1,4 +1,5 @@
-from types import MappingProxyType
+from __future__ import annotations
+from types import MappingProxyType, SimpleNamespace
 from typing import Any, Iterator, Sequence, Type, Union, overload
 
 
@@ -39,6 +40,7 @@ class ReadonlyDict():
     ReadonlyDictObject.key1 returns another ReadonlyDict object 
     with only the nested values
     """
+    __slots__ = '_dict',
 
     @overload
     def __init__(self, values: dict[str, Any] = None) -> None:
@@ -97,8 +99,6 @@ class ReadonlyDict():
         """Get nested item from tuple of keys"""
 
     def __getitem__(self, name) -> Any:
-        if name == '_getdict':
-            return object.__getattribute__(self, name)
         if name in self._getdict():
             return self._getdict()[name]
 
@@ -161,18 +161,80 @@ class ReadonlyDict():
             return self._getdict() == ReadonlyDict(other)._getdict()
         except TypeError:
             return False
-    
-    @property
-    def __dict__(self):
-        return MappingProxyType(self._getdict())
 
 
 class Nonwritable(type):
+    """
+    When as metaclass, prevents any attribute from being set or deleted\n
+    Mutable atttributes can still be modifed\n
+    In the event an attribute must be modified, 
+    'object.__setattr__(object, name, value)' or 
+    'object.__delattr__(object, name)'
+    can be used
+    """
+    
     def __setattr__(self, name: str, value: Any) -> None:
         raise TypeError('Nonwritable attributes cannot be set')
 
+    def __delattr__(self, name: str) -> None:
+        raise TypeError('Nonwritable attributes cannot be deleted')
 
-class ConstantsClass(metaclass=Nonwritable): ...
+
+class ConstantsMeta(Nonwritable):
+    """
+    Defines a get item method 
+    """
+    @overload
+    def __getitem__(self, name: str) -> Any:
+        """Get item from key"""
+
+    @overload
+    def __getitem__(self, name: tuple[str]) -> Any:
+        """Get nested item from tuple of keys"""
+
+    def __getitem__(self, name) -> Any:
+        try:
+            if name in self.__dict__:
+                return getattr(self, name)
+            #If name is a tuple, iterate over sub-objects and their attributes
+            if isinstance(name, tuple):
+                obj = self
+                for item in name:
+                    obj = getattr(obj, item)
+                return obj
+        
+        except AttributeError as e:
+            raise KeyError(*e.args) from e
+        
+        if not isinstance(name, (str, tuple)):
+            raise TypeError(f'Items must be of type str or tuple[str], not {type(name)}')
+        raise KeyError(f'Attribute(s) {name} not in {self}')
+    
+    #Taken practically directly from types.SimpleNamespace documentation page
+    def __repr__(self) -> str:
+        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in self.__dict__.items()])})'
+
+
+class ConstantsClass(SimpleNamespace, metaclass=ConstantsMeta):
+    """
+    Unique properties of a ConstantsClass:\n
+    - Any class attributes cannot be changed or deleted;
+    new class attributes cannot be added\n
+    - Values can be accessed using the following notations: 
+    ConstantsClass[key],
+    ConstantsClass.key\n
+    - Nested values can be accessed with the following notations
+    if a class contains a nested class that inherits from ConstantsClass
+    (works for more than two as well):
+    ConstantsClass[key1][key2],
+    ConstantsClass[key1, key2],
+    ConstantsClass[(key1, key2)],
+    ConstantsClass.key1.key2\n
+    - Initializing a class returns the class itself, not an instance
+    - Provides a useful repr (equivalent to that of types.SimpleNamespace)
+    """
+    def __new__(cls: ConstantsClass) -> ConstantsClass:
+        return cls
 
 
 class Interface(ConstantsClass):
@@ -189,8 +251,8 @@ class Elevator(ConstantsClass):
     kMotorIDs = ()
     kPIDConstants = {'Kp': 0, 'Ki': 0, 'Kd': 0}
 
-
 if __name__ == '__main__':
+    test_object = object()
     
     test_instance = ReadonlyDict({
         'first': 1,
@@ -200,12 +262,23 @@ if __name__ == '__main__':
         'dict': {
             'negative1': -1,
             'negative2': -2,
+            'object1': test_object,
+            'object2': None,
         },
     })
 
-    #Normal lookup
+    #Testing
+    assert isinstance(test_instance, ReadonlyDict)
     assert test_instance['first'] == 1
+    assert test_instance.second == 2
     assert test_instance['string'] == 'abcde'
+    assert test_instance['int_list'][0] == 5
+    assert isinstance(test_instance['dict'], ReadonlyDict)
+    assert isinstance(test_instance.dict, ReadonlyDict)
+    assert test_instance['dict']['negative1'] == -1
+    assert test_instance['dict', 'negative2'] == -2
+    assert test_instance.dict.object1 is test_object
+    assert test_instance.dict.object2 is None
 
     
     #Equivalent to B
