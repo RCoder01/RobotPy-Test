@@ -5,20 +5,6 @@ from typing import _T, Any, Iterator, Sequence, Type, Union, overload
 from warnings import warn
 
 
-def Immutable(obj):
-    class ImmutableType(type(obj)):
-        def __setattr__(self, name: str, value: Any) -> None:
-            raise TypeError('Immutable object cannot be modified')
-    
-    if isinstance(obj, type):
-        returnObj = ImmutableType("ImmutableTypeObject", obj.__bases__, dict(obj.__dict__))
-    else:
-        returnObj = object.__new__(ImmutableType)
-        for name, value in obj.__dict__.items():
-            object.__setattr__(returnObj, name, value)
-    
-    return returnObj
-
 
 class ReadonlyDict:
     """
@@ -318,7 +304,4 @@ if __name__ == '__main__':
         ['b', 3],
     })
 
-    @Immutable
-    class C:
-        abcd = 4
-        efgh = '123'
+    })
