@@ -238,24 +238,36 @@ class ConstantsClass(metaclass=ConstantsMeta):
     but ignores attributes with both two leading and underscores 
     ('dunder' attributes)
     """
+    __slots__ = ()
+    
     def __new__(cls: ConstantsClass) -> ConstantsClass:
         return cls
 
 
-class SingletonMeta(type):
-    def __new__(mcls: SingletonMeta, clsname: str, bases: tuple, clsdict: dict):
+class SingletonType(type):
+    def __new__(mcls: SingletonType, clsname: str, bases: tuple, clsdict: dict):
         clsdict.update({'_instance': None})
-        return super(mcls, SingletonMeta).__new__(mcls, clsname, bases, clsdict)
+        return super(mcls, SingletonType).__new__(mcls, clsname, bases, clsdict)
 
-    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+    def __call__(cls: Type[_T], *args: Any, **kwargs: Any) -> _T:
         return cls.get_instance(*args, **kwargs)
 
-    @classmethod
     def get_instance(cls: Type[_T], *args, **kwargs) -> _T:
         if cls._instance is None:
             cls._instance = cls.__new__(*args, **kwargs)
         return cls._instance
 
+
+class SingletonSubsystemType(SingletonType, type(commands2.Subsystem)):
+    def getInstance(cls: type[_T], *args, **kwargs) -> _T:
+        return super(cls, SingletonSubsystemType).get_instance(cls, *args, **kwargs)
+
+    def get_instance(cls: Type[_T], *args, **kwargs) -> None:
+        raise AttributeError('get_instance should be called using the method "getInstance"')
+
+
+class SingletonSubsystem(commands2.Subsystem, metaclass=SingletonSubsystemType):
+    __slots__ = ()
 
 class Interface(ConstantsClass):
     kDriverControllerPort = 0
