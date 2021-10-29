@@ -1,9 +1,8 @@
 from __future__ import annotations
-from sys import meta_path
-from types import MappingProxyType, SimpleNamespace
-from typing import _T, Any, Iterator, Sequence, Type, Union, overload
-from warnings import warn
+import typing
+from typing import _T, Any, Iterator, Type, Union
 
+import commands2
 
 
 class ReadonlyDict:
@@ -30,21 +29,21 @@ class ReadonlyDict:
     """
     __slots__ = '_dict',
 
-    @overload
+    @typing.overload
     def __init__(self, values: dict[str, Any] = None) -> None:
         """
         Initialize a read-only dictionary from a preexisting dictionary;
         Keys must be str
         """
     
-    @overload
+    @typing.overload
     def __init__(self, *args: Union[list[tuple[str, Any]], tuple[tuple[str, Any]]]) -> None:
         """
         Initialize a read-only dictionary from a list/tuple of key-value pairs;
         Keys must be str
         """
     
-    @overload
+    @typing.overload
     def __init__(self, **kwargs) -> None:
         """
         New read-only dictionary initialized with the name=value pairs
@@ -80,11 +79,11 @@ class ReadonlyDict:
         
         return super().__init__()
 
-    @overload
+    @typing.overload
     def __getitem__(self, name: str) -> Any:
         """Get item from key"""
 
-    @overload
+    @typing.overload
     def __getitem__(self, name: tuple[str]) -> Any:
         """Get nested item from tuple of keys"""
 
@@ -174,11 +173,11 @@ class ConstantsMeta(Nonwritable):
     """
     Defines a get item and repr method
     """
-    @overload
+    @typing.overload
     def __getitem__(self, name: str) -> Any:
         """Get item from key"""
 
-    @overload
+    @typing.overload
     def __getitem__(self, name: tuple[str]) -> Any:
         """Get nested item from tuple of keys"""
 
@@ -189,12 +188,16 @@ class ConstantsMeta(Nonwritable):
             #If name is a tuple, iterate over sub-objects and their attributes
             if isinstance(name, tuple):
                 obj = self
+
                 for item in name:
+                    #If it has items, check only those, otherwise, check attributes
                     if hasattr(obj, '__getitem__'):
                         obj = obj[name]
                     else:
                         obj = getattr(obj, item)
+                
                 return obj
+        
         except AttributeError as e:
             raise KeyError(*e.args) from e
         except KeyError:
@@ -302,6 +305,4 @@ if __name__ == '__main__':
     C = ReadonlyDict({
         ('a', 2),
         ['b', 3],
-    })
-
     })
