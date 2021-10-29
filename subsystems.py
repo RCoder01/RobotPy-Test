@@ -26,12 +26,14 @@ class Drivetrain(commands2.Subsystem):
     def __init__(self):
         super().__init__()
 
-        self.mMotors = SimpleNamespace()
-        self.mMotors.left = wpilib.SpeedControllerGroup(
-            *[ctre.TalonFX(ID) for ID in constants.Drivetrain.kLeftMotorIDs]
-        )
-        self.motors.right = wpilib.SpeedControllerGroup(
-            *[ctre.TalonFX(ID) for ID in constants.Drivetrain.kRightMotorIDs]
+        self.mMotors = SimpleNamespace(
+            left = wpilib.SpeedControllerGroup(
+                *[ctre.TalonFX(ID) for ID in constants.Drivetrain.kLeftMotorIDs]
+            ),
+
+            right = wpilib.SpeedControllerGroup(
+                *[ctre.TalonFX(ID) for ID in constants.Drivetrain.kRightMotorIDs]
+            ),
         )
 
         self.drive = wpilib.drive.DifferentialDrive(

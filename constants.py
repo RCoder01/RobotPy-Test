@@ -2,6 +2,7 @@ from __future__ import annotations
 from sys import meta_path
 from types import MappingProxyType, SimpleNamespace
 from typing import Any, Iterator, Sequence, Type, Union, overload
+from warnings import warn
 
 
 def Immutable(obj):
@@ -90,6 +91,8 @@ class ReadonlyDict():
                 self._dict[k] = tuple(v)
             else:
                 self._dict[k] = v
+        
+        return super().__init__()
 
     @overload
     def __getitem__(self, name: str) -> Any:
@@ -183,7 +186,7 @@ class Nonwritable(type):
 
 class ConstantsMeta(Nonwritable):
     """
-    Defines a get item method 
+    Defines a get item and repr method
     """
     @overload
     def __getitem__(self, name: str) -> Any:
@@ -201,22 +204,26 @@ class ConstantsMeta(Nonwritable):
             if isinstance(name, tuple):
                 obj = self
                 for item in name:
-                    obj = getattr(obj, item)
+                    if hasattr(obj, '__getitem__'):
+                        obj = obj[name]
+                    else:
+                        obj = getattr(obj, item)
                 return obj
-        
         except AttributeError as e:
             raise KeyError(*e.args) from e
-        
+        except KeyError:
+            raise
+
         if not isinstance(name, (str, tuple)):
             raise TypeError(f'Items must be of type str or tuple[str], not {type(name)}')
         raise KeyError(f'Attribute(s) {name} not in {self}')
     
     #Taken practically directly from types.SimpleNamespace documentation page
     def __repr__(self) -> str:
-        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in self.__dict__.items() if k.startswith("__")])})'
+        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in self.__dict__.items() if k.startswith("__") and k.endswith("__")])})'
 
 
-class ConstantsClass(SimpleNamespace, metaclass=ConstantsMeta):
+class ConstantsClass(metaclass=ConstantsMeta):
     """
     Unique properties of a ConstantsClass:
 
@@ -237,8 +244,10 @@ class ConstantsClass(SimpleNamespace, metaclass=ConstantsMeta):
 
     - Initializing a class returns the class itself, not an instance
 
-    - Provides a useful repr
-    (similar to that of types.SimpleNamespace, except attributes with two leading underscores)
+    - Provides a useful repr;
+    similar to that of types.SimpleNamespace,
+    but ignores attributes with both two leading and underscores 
+    ('dunder' attributes)
     """
     def __new__(cls: ConstantsClass) -> ConstantsClass:
         return cls
