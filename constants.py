@@ -239,28 +239,46 @@ class ConstantsClass(metaclass=ConstantsMeta):
     ('dunder' attributes)
     """
     __slots__ = ()
-    
+
     def __new__(cls: ConstantsClass) -> ConstantsClass:
         return cls
 
 
 class SingletonType(type):
+    """
+    Metaclass for singleton classes
+    """
     def __new__(mcls: SingletonType, clsname: str, bases: tuple, clsdict: dict):
+        """
+        Updates clsdict with _instance attribute
+        """
         clsdict.update({'_instance': None})
         return super(mcls, SingletonType).__new__(mcls, clsname, bases, clsdict)
 
     def __call__(cls: Type[_T], *args: Any, **kwargs: Any) -> _T:
+        """
+        Overrides call phrasing of __new__ to prevent __init__ calls
+        """
         return cls.get_instance(*args, **kwargs)
 
     def get_instance(cls: Type[_T], *args, **kwargs) -> _T:
+        """
+        Uses _instance attribute to check if an instance already exists
+        """
         if cls._instance is None:
             cls._instance = cls.__new__(*args, **kwargs)
         return cls._instance
 
 
 class SingletonSubsystemType(SingletonType, type(commands2.Subsystem)):
+    """
+    Primarily to create valid metaclass for subclasses of commands2.Subsystem and SingletonType
+    """
     def getInstance(cls: type[_T], *args, **kwargs) -> _T:
-        return super(cls, SingletonSubsystemType).get_instance(cls, *args, **kwargs)
+        """
+        Rephrases get_instance to follow C++/Java syntax
+        """
+        return SingletonType.get_instance(cls, *args, **kwargs)
 
     def get_instance(cls: Type[_T], *args, **kwargs) -> None:
         raise AttributeError('get_instance should be called using the method "getInstance"')
@@ -281,7 +299,11 @@ class Drivetrain(ConstantsClass):
 
 class Elevator(ConstantsClass):
     kMotorIDs = ()
-    kPIDConstants = {'Kp': 0, 'Ki': 0, 'Kd': 0}
+    class kPIDConstants(ConstantsClass):
+        Kp = 0
+        Ki = 0
+        Kd = 0
+
 
 if __name__ == '__main__':
     test_object = object()
