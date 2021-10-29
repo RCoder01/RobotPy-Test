@@ -240,17 +240,17 @@ class ConstantsClass(metaclass=ConstantsMeta):
 
 
 class SingletonMeta(type):
+    def __new__(mcls: SingletonMeta, clsname: str, bases: tuple, clsdict: dict):
+        clsdict.update({'_instance': None})
+        return super(mcls, SingletonMeta).__new__(mcls, clsname, bases, clsdict)
+
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
-        return cls.__new__(*args, **kwargs)
-
-
-class Singleton(metaclass=SingletonMeta):
-    _instance = None
+        return cls.get_instance(*args, **kwargs)
 
     @classmethod
-    def getInstance(cls: Type[_T]) -> _T:
+    def get_instance(cls: Type[_T], *args, **kwargs) -> _T:
         if cls._instance is None:
-            cls._instance = object.__new__(cls)
+            cls._instance = cls.__new__(*args, **kwargs)
         return cls._instance
 
 
