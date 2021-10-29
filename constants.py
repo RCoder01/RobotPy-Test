@@ -1,7 +1,7 @@
 from __future__ import annotations
 from sys import meta_path
 from types import MappingProxyType, SimpleNamespace
-from typing import Any, Iterator, Sequence, Type, Union, overload
+from typing import _T, Any, Iterator, Sequence, Type, Union, overload
 from warnings import warn
 
 
@@ -20,7 +20,7 @@ def Immutable(obj):
     return returnObj
 
 
-class ReadonlyDict():
+class ReadonlyDict:
     """
     Dictionary-like object which stores key-value pairs
 
@@ -251,6 +251,21 @@ class ConstantsClass(metaclass=ConstantsMeta):
     """
     def __new__(cls: ConstantsClass) -> ConstantsClass:
         return cls
+
+
+class SingletonMeta(type):
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        return cls.__new__(*args, **kwargs)
+
+
+class Singleton(metaclass=SingletonMeta):
+    _instance = None
+
+    @classmethod
+    def getInstance(cls: Type[_T]) -> _T:
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
+        return cls._instance
 
 
 class Interface(ConstantsClass):
