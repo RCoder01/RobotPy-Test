@@ -88,31 +88,32 @@ class ReadonlyDict:
         """Get nested item from tuple of keys"""
 
     def __getitem__(self, name) -> Any:
-        if name in self._getdict():
-            return self._getdict()[name]
+        if isinstance(name, str):
+            if name in self._getdict():
+                return self._getdict()[name]
+            raise KeyError(f'{name} not found in {self!r}')
 
-        try:
-            if not isinstance(name, tuple):
-                raise ValueError()
-            if len(name) > 1:
-                return self[name[0]][name[1:]]
-            if name[0] == name:
-                raise ValueError()
-            return self[name[0]]
-        except ValueError as e:
-            e.val = [name] + e.val if e.args else [name]
-            e.args = f'{tuple(e.val)} not found in {self}',
-            raise
-        except (TypeError, IndexError) as e:
-            new_e = ValueError(f'{tuple(name)} not found in {self}')
-            new_e.val = [name]
-            raise new_e from e
-        except RecursionError:
-            print(name)
-            raise
+        elif isinstance(name, tuple):
+            obj = self
+
+            try:
+                for attr in name:
+                    if hasattr(obj, '__getitem__'):
+                        obj = obj[attr]
+                    else:
+                        obj = getattr(obj, attr)
+            except (TypeError, ValueError, LookupError, AttributeError) as e:
+                raise KeyError(f'{name} not found in {self!r}') from e
+            
+            return obj
+        
+        raise TypeError(f'Object of type {type(name).__name__} does not match required type of (str, tuple)')
     
     def __getattr__(self, name: str) -> Any:
-        return self[name]
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(*e.args) from e
 
     def _getdict(self) -> dict:
         return object.__getattribute__(self, '_dict')
@@ -152,7 +153,7 @@ class ReadonlyDict:
             return False
 
 
-class Nonwritable(type):
+class NonwritableType(type):
     """
     When as metaclass, prevents any attribute from being set or deleted\n
     Mutable atttributes can still be modifed\n
@@ -169,7 +170,7 @@ class Nonwritable(type):
         raise TypeError('Nonwritable attributes cannot be deleted')
 
 
-class ConstantsMeta(Nonwritable):
+class ConstantsType(NonwritableType):
     """
     Defines a get item and repr method
     """
@@ -212,7 +213,7 @@ class ConstantsMeta(Nonwritable):
         return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in self.__dict__.items() if k.startswith("__") and k.endswith("__")])})'
 
 
-class ConstantsClass(metaclass=ConstantsMeta):
+class ConstantsClass(metaclass=ConstantsType):
     """
     Unique properties of a ConstantsClass:
 
@@ -287,6 +288,7 @@ class SingletonSubsystemType(SingletonType, type(commands2.Subsystem)):
 class SingletonSubsystem(commands2.Subsystem, metaclass=SingletonSubsystemType):
     __slots__ = ()
 
+
 class Interface(ConstantsClass):
     kDriverControllerPort = 0
     kManipControllerPort = 1
@@ -299,6 +301,7 @@ class Drivetrain(ConstantsClass):
 
 class Elevator(ConstantsClass):
     kMotorIDs = ()
+
     class kPIDConstants(ConstantsClass):
         Kp = 0
         Ki = 0
