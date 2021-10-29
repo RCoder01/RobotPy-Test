@@ -253,30 +253,6 @@ class ConstantsClass(metaclass=ConstantsMeta):
         return cls
 
 
-class TypeWarning(UserWarning):
-    pass
-
-
-class MetaTest(Nonwritable):
-    def __new__(mcls: MetaTest, clsname: str, bases: tuple[type], clsdict: dict):
-        if SimpleNamespace not in bases:
-            bases = *bases, SimpleNamespace
-        new_clsdict = {k: v for k, v in clsdict if not (k.startswith('__') and k.endswith('__'))}
-        try:
-            return super().__new__(
-                clsname, 
-                bases, 
-                new_clsdict,
-            )(**new_clsdict)
-        except TypeError:
-            warn(
-                f'Provided base classes {bases[:-1]} of {clsname} are incompatible with base class SimpleNamespace; '
-                'reverting to using bases (SimpleNamespace,)',
-                TypeWarning,
-            )
-            return SimpleNamespace(**new_clsdict)
-
-
 class Interface(ConstantsClass):
     kDriverControllerPort = 0
     kManipControllerPort = 1
