@@ -1,16 +1,25 @@
 from __future__ import annotations
 import typing
 from typing import _T, Any, Type
+import warnings
 
 import commands2
 
-from pyutils import T, NonwritableType, SingletonType
+from pyutils import T, NonwritableType, SingletonType, remove_dunder
 
 
 class ConstantsType(NonwritableType):
     """
     Defines a get item and repr method
     """
+    def __new__(mcls: ConstantsType, clsname: str, bases: tuple, clsdict: dict) -> ConstantsType:
+        """
+        Checks for potentially dubious keys attribute
+        """
+        if 'keys' in clsdict:
+            warnings.warn('Defining a keys attribute may cause issues with "**" unpacking syntax', UserWarning)
+        return super(mcls, SingletonType).__new__(mcls, clsname, bases, clsdict)
+    
     @typing.overload
     def __getitem__(self, name: str) -> Any:
         """Get item from key"""
@@ -48,7 +57,16 @@ class ConstantsType(NonwritableType):
     
     # Taken practically directly from types.SimpleNamespace documentation page
     def __repr__(self) -> str:
-        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in self.__dict__.items() if k.startswith("__") and k.endswith("__")])})'
+        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in remove_dunder(self.__dict__).items()])})'
+    
+    def keys(self) -> tuple:
+        return (k for k, _ in remove_dunder(self.__dict__).items())
+
+    def values(self) -> tuple:
+        return (v for k, v in remove_dunder(self.__dict__).items())
+
+    def items(self) -> tuple:
+        return ((k, v) for k, v in remove_dunder(self.__dict__).items())
 
 
 class ConstantsClass(metaclass=ConstantsType):

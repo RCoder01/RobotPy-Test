@@ -81,6 +81,10 @@ def deadzone(
         return 1
 
 
+def remove_dunder(dict_: dict) -> dict:
+    return {k: v for k, v in dict_.items() if not(k.startswith('__') and k.endswith('__'))}
+
+
 class ReadonlyDict:
     """
     Dictionary-like object which stores key-value pairs
