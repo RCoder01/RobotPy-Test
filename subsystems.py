@@ -10,17 +10,6 @@ import wpilib.drive
 import constants
 
 
-class SingletonSubsystem():
-    def __init_subclass__(cls) -> None:
-        
-        return super().__init_subclass__()
-
-    def __new__(cls: _T, *args, **kwargs) -> _T:
-        if cls is SingletonSubsystem:
-            raise TypeError('SingetonSubsystem cannot be instantiated directly')
-        return super().__new__(cls)
-
-
 class Drivetrain(commands2.Subsystem):
 
     def __init__(self):
