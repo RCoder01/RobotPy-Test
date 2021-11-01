@@ -5,7 +5,7 @@ import warnings
 
 import commands2
 
-from pyutils import T, NonwritableType, SingletonType, remove_dunder
+from pyutils import T, NonwritableType, SingletonType, remove_dunder_attrs
 
 
 class ConstantsType(NonwritableType):
@@ -57,16 +57,16 @@ class ConstantsType(NonwritableType):
     
     # Taken practically directly from types.SimpleNamespace documentation page
     def __repr__(self) -> str:
-        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in remove_dunder(self.__dict__).items()])})'
+        return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in remove_dunder_attrs(self.__dict__).items()])})'
     
     def keys(self) -> tuple:
-        return (k for k, _ in remove_dunder(self.__dict__).items())
+        return (k for k, _ in remove_dunder_attrs(self.__dict__).items())
 
     def values(self) -> tuple:
-        return (v for k, v in remove_dunder(self.__dict__).items())
+        return (v for k, v in remove_dunder_attrs(self.__dict__).items())
 
     def items(self) -> tuple:
-        return ((k, v) for k, v in remove_dunder(self.__dict__).items())
+        return ((k, v) for k, v in remove_dunder_attrs(self.__dict__).items())
 
 
 class ConstantsClass(metaclass=ConstantsType):

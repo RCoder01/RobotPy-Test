@@ -81,7 +81,7 @@ def deadzone(
         return 1
 
 
-def remove_dunder(dict_: dict) -> dict:
+def remove_dunder_attrs(dict_: dict) -> dict:
     return {k: v for k, v in dict_.items() if not(k.startswith('__') and k.endswith('__'))}
 
 
