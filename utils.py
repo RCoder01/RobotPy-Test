@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing
-from typing import _T, Any, Type
+from typing import Any, Generator, Type
 import warnings
 
 import commands2
@@ -18,7 +18,7 @@ class ConstantsType(NonwritableType):
         """
         if 'keys' in clsdict:
             warnings.warn('Defining a keys attribute may cause issues with "**" unpacking syntax', UserWarning)
-        return super(mcls, SingletonType).__new__(mcls, clsname, bases, clsdict)
+        return super(ConstantsType, mcls).__new__(mcls, clsname, bases, clsdict)
     
     @typing.overload
     def __getitem__(self, name: str) -> Any:
@@ -29,6 +29,9 @@ class ConstantsType(NonwritableType):
         """Get nested item from tuple of keys"""
 
     def __getitem__(self, name) -> Any:
+        if not isinstance(name, (str, tuple)):
+            raise TypeError(f'Items must be of type str or tuple[str], not {type(name)}')
+        
         try:
             if name in self.__dict__:
                 return getattr(self, name)
@@ -40,7 +43,7 @@ class ConstantsType(NonwritableType):
                     # If it has items, check only those
                     # Otherwise, check attributes
                     if hasattr(obj, '__getitem__'):
-                        obj = obj[name]
+                        obj = obj[item]
                     else:
                         obj = getattr(obj, item)
                 
@@ -51,8 +54,6 @@ class ConstantsType(NonwritableType):
         except KeyError:
             raise
 
-        if not isinstance(name, (str, tuple)):
-            raise TypeError(f'Items must be of type str or tuple[str], not {type(name)}')
         raise KeyError(f'Attribute(s) {name} not in {self}')
     
     # Taken practically directly from types.SimpleNamespace documentation page
@@ -60,13 +61,16 @@ class ConstantsType(NonwritableType):
         return f'{self.__name__}({", ".join([f"{k}={v!r}" for k, v in remove_dunder_attrs(self.__dict__).items()])})'
     
     def keys(self) -> tuple:
-        return (k for k, _ in remove_dunder_attrs(self.__dict__).items())
+        return tuple(k for k, _ in remove_dunder_attrs(self.__dict__).items())
 
     def values(self) -> tuple:
-        return (v for k, v in remove_dunder_attrs(self.__dict__).items())
+        return tuple(v for k, v in remove_dunder_attrs(self.__dict__).items())
 
     def items(self) -> tuple:
-        return ((k, v) for k, v in remove_dunder_attrs(self.__dict__).items())
+        return tuple((k, v) for k, v in remove_dunder_attrs(self.__dict__).items())
+    
+    def __iter__(self) -> Generator:
+        return self.keys().__iter__()
 
 
 class ConstantsClass(metaclass=ConstantsType):
@@ -105,13 +109,13 @@ class SingletonSubsystemType(SingletonType, type(commands2.Subsystem)):
     """
     Primarily to create valid metaclass for subclasses of commands2.Subsystem and SingletonType
     """
-    def getInstance(cls: type[_T], *args, **kwargs) -> _T:
+    def getInstance(cls: type[T], *args, **kwargs) -> T:
         """
         Rephrases get_instance to follow C++/Java syntax
         """
         return SingletonType.get_instance(cls, *args, **kwargs)
 
-    def get_instance(cls: Type[_T], *args, **kwargs) -> None:
+    def get_instance(cls: Type[T], *args, **kwargs) -> None:
         raise AttributeError('get_instance should be called using the method "getInstance"')
 
 
@@ -134,15 +138,23 @@ if __name__ == '__main__':
             object2 = None
 
     # Testing
-    assert isinstance(TestConstant, ConstantsClass)
+    assert issubclass(TestConstant, ConstantsClass)
     assert TestConstant['first'] == 1
     assert TestConstant.second == 2
     assert TestConstant['string'] == 'abcde'
     assert TestConstant['int_list'][0] == 5
     assert TestConstant['int_list', 2] == 7
-    assert isinstance(TestConstant['Dict_'], ConstantsClass)
-    assert isinstance(TestConstant.Dict_, ConstantsClass)
+
+    assert issubclass(TestConstant['Dict_'], ConstantsClass)
+    assert issubclass(TestConstant.Dict_, ConstantsClass)
     assert TestConstant['Dict_']['negative1'] == -1
     assert TestConstant['Dict_', 'negative2'] == -2
     assert TestConstant.Dict_.object1 is test_object
     assert TestConstant.Dict_['object2'] is None
+
+    assert tuple(TestConstant.keys()) == ('first', 'second', 'string', 'int_list', 'Dict_')
+    assert tuple(TestConstant.values()) == (1, 2, 'abcde', [5, 6, 7, 8, 9], TestConstant.Dict_)
+    assert tuple(TestConstant.items()) == (('first', 1), ('second', 2), ('string', 'abcde'), ('int_list', [5, 6, 7, 8, 9]), ('Dict_', TestConstant.Dict_))
+    assert 'first' in TestConstant
+    assert tuple(item for item in TestConstant) == TestConstant.keys()
+    assert {**TestConstant} == dict(TestConstant.items())

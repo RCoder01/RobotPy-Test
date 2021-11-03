@@ -269,7 +269,7 @@ class SingletonType(type):
         Updates clsdict with _instance attribute
         """
         clsdict.update({'_instance': None})
-        return super(mcls, SingletonType).__new__(mcls, clsname, bases, clsdict)
+        return super(SingletonType, mcls).__new__(mcls, clsname, bases, clsdict)
 
     def __call__(cls: Type[T], *args: Any, **kwargs: Any) -> T:
         """
