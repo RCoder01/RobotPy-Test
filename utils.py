@@ -124,7 +124,12 @@ class SingletonSubsystem(commands2.Subsystem, metaclass=SingletonSubsystemType):
 
 
 if __name__ == '__main__':
+
+    print('Testing utils.py')
+
     test_object = object()
+
+    print('Testing ConstantsClass')
 
     class TestConstant(ConstantsClass):
         first = 1
@@ -138,23 +143,28 @@ if __name__ == '__main__':
             object2 = None
 
     # Testing
+    # Direct TestConstant properties
     assert issubclass(TestConstant, ConstantsClass)
     assert TestConstant['first'] == 1
     assert TestConstant.second == 2
     assert TestConstant['string'] == 'abcde'
     assert TestConstant['int_list'][0] == 5
     assert TestConstant['int_list', 2] == 7
-
+    # Indirect TestConstant properties via TestConstant.Dict_
     assert issubclass(TestConstant['Dict_'], ConstantsClass)
     assert issubclass(TestConstant.Dict_, ConstantsClass)
     assert TestConstant['Dict_']['negative1'] == -1
     assert TestConstant['Dict_', 'negative2'] == -2
     assert TestConstant.Dict_.object1 is test_object
     assert TestConstant.Dict_['object2'] is None
-
+    # Iteration testing
     assert tuple(TestConstant.keys()) == ('first', 'second', 'string', 'int_list', 'Dict_')
     assert tuple(TestConstant.values()) == (1, 2, 'abcde', [5, 6, 7, 8, 9], TestConstant.Dict_)
     assert tuple(TestConstant.items()) == (('first', 1), ('second', 2), ('string', 'abcde'), ('int_list', [5, 6, 7, 8, 9]), ('Dict_', TestConstant.Dict_))
     assert 'first' in TestConstant
     assert tuple(item for item in TestConstant) == TestConstant.keys()
     assert {**TestConstant} == dict(TestConstant.items())
+
+    print('ConstantsClass tests succeded')
+
+    print('utils.py tests succeded')

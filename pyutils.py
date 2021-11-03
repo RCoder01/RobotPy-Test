@@ -287,6 +287,8 @@ class SingletonType(type):
 
 
 if __name__ == '__main__':
+    print('Testing pyutils.py')
+
     test_object = object()
     
     print('Testing ReadonlyDict')
@@ -318,3 +320,5 @@ if __name__ == '__main__':
     assert test_instance.dict['object2'] is None
     
     print('ReadonlyDict tests succeded')
+
+    print('pyutils.py tests succeded')
