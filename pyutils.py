@@ -17,12 +17,12 @@ class unit_float(float):
         
 
 def deadzone(
-            input: unit_float,
-            power: float = 2,
-            lower_maxzone: unit_float = -1,
-            lower_deadzone: unit_float = -0.1,
-            higher_deadzone: unit_float = 0.1,
-            higher_maxzone: unit_float = 1,
+        input: unit_float,
+        power: float = 2,
+        lower_maxzone: unit_float = -1,
+        lower_deadzone: unit_float = -0.1,
+        higher_deadzone: unit_float = 0.1,
+        higher_maxzone: unit_float = 1,
         ) -> unit_float:
     """
     Highly customizable deadzone function, 
@@ -260,11 +260,11 @@ class SingletonType(type):
     Metaclass for singleton classes
     """
     def __new__(
-        mcls: SingletonType,
-        clsname: str,
-        bases: tuple,
-        clsdict: dict,
-    ) -> SingletonType:
+            mcls: SingletonType,
+            clsname: str,
+            bases: tuple,
+            clsdict: dict,
+            ) -> SingletonType:
         """
         Updates clsdict with _instance attribute
         """
