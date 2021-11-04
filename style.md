@@ -374,6 +374,24 @@ Any names clashing with builtin python types or keywords can be suffixed with a 
 
 Objects should be named just as variables (everything in Python is an object, check with `variable.__bases__` or `type(variable).__bases__`).
 
+### **Jeff**
+
+Shooter velocity is Jeff
+
+### Jeff:
+
+`Jeff`
+
+### Jeff:
+
+"Jeff"
+
+### Jeff:
+
+```
+Jeff
+```
+
 
 ## Addendum
 
