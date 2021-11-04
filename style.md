@@ -222,11 +222,11 @@ for bar in Foo:
 
 ### **String Literal Definitions**
 
-When string literal definitions exceed 79 characters, use implicit string literal concatenation to spread across lines.
-
 ### Pythonic:
 
-Single quotes should be used whenever possible, but use double quotes instead of `\'`.
+Single quotes should be used whenever possible, but use double quotes instead of `\'` should a single quote need to be in a string.
+
+When string literal definitions exceed 79 characters, use implicit string literal concatenation to spread across lines.
 
 ### Mixed:
 
