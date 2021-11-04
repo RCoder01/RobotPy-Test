@@ -3,20 +3,22 @@ from __future__ import annotations
 from utils import ConstantsClass
 
 
+# Any values with just a type hint are placeholders for the actual value
+
 class Interface(ConstantsClass):
-    kDriverControllerPort = 0
-    kManipControllerPort = 1
+    kDriverControllerPort: int
+    kManipControllerPort: int
 
 
 class Drivetrain(ConstantsClass):
-    kLeftMotorIDs = ()
-    kRightMotorIDs = ()
+    kLeftMotorIDs: tuple[int]
+    kRightMotorIDs: tuple[int]
 
 
 class Elevator(ConstantsClass):
-    kMotorIDs = ()
+    kMotorIDs: tuple[int]
 
     class kPIDConstants(ConstantsClass):
-        Kp = 0
-        Ki = 0
-        Kd = 0
+        Kp: int
+        Ki: int
+        Kd: int

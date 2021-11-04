@@ -25,11 +25,11 @@ class AutonomousCommand(commands2.CommandBase):
 class Drivetrain:
     class default(commands2.CommandBase):
         def __init__(
-            self, 
-            drivetrain: subsystems.Drivetrain, 
-            leftPowerSupplier: Callable[[], unit_float], 
-            rightPowerSupplier: Callable[[], unit_float],
-            ) -> None:
+                self, 
+                drivetrain: subsystems.Drivetrain, 
+                leftPowerSupplier: Callable[[], unit_float], 
+                rightPowerSupplier: Callable[[], unit_float],
+                ) -> None:
             """
             Sets drivetrain to arcade drive
             """

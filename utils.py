@@ -9,16 +9,12 @@ from pyutils import T, NonwritableType, SingletonType, remove_dunder_attrs
 
 
 class ConstantsType(NonwritableType):
-    """
-    Defines a get item and repr method
-    """
+    """Defines a get item and repr method"""
     def __new__(mcls: ConstantsType, clsname: str, bases: tuple, clsdict: dict) -> ConstantsType:
-        """
-        Checks for potentially dubious keys attribute
-        """
+        """Checks for potentially dubious keys attribute"""
         if 'keys' in clsdict:
             warnings.warn('Defining a keys attribute may cause issues with "**" unpacking syntax', UserWarning)
-        return super(ConstantsType, mcls).__new__(mcls, clsname, bases, clsdict)
+        return super().__new__(mcls, clsname, bases, clsdict)
     
     @typing.overload
     def __getitem__(self, name: str) -> Any:
