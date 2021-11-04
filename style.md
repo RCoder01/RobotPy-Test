@@ -150,6 +150,8 @@ Use a type definition T when input and output objects are the same but of unknow
 
 ```
 def foo(bar: int, baz: list[str], bang: Callable[[T], Union[list, tuple][Generator]]) -> T:
+    frobnicate(bang)
+    ...
 
 # Alternative syntax:
 def foo(
