@@ -131,17 +131,18 @@ class ReadonlyDict:
         """
 
     def __init__(self, *args, **kwargs) -> None:
+        if not args:
+            values = {}
+        
         try:
-            if not args:
-                values = {}
-            elif len(args) == 1:
+            if len(args) == 1:
                 values = dict(args[0]) or {}
             else:
                 values = dict(args)
-        except TypeError:
-            raise TypeError(
+        except (TypeError, ValueError) as e:
+            raise ValueError(
                 'ReadonlyDict cannot be initialized with given argument(s)'
-            )
+            ) from e
         
         values.update(kwargs)
 
@@ -291,8 +292,6 @@ if __name__ == '__main__':
 
     test_object = object()
     
-    print('Testing ReadonlyDict')
-    
     test_instance = ReadonlyDict({
         'first': 1,
         'second': 2,
@@ -306,18 +305,22 @@ if __name__ == '__main__':
         },
     })
 
-    # Testing
-    assert isinstance(test_instance, ReadonlyDict)
-    assert test_instance['first'] == 1
-    assert test_instance.second == 2
-    assert test_instance['string'] == 'abcde'
-    assert test_instance['int_list'][0] == 5
-    assert isinstance(test_instance['dict'], ReadonlyDict)
-    assert isinstance(test_instance.dict, ReadonlyDict)
-    assert test_instance['dict']['negative1'] == -1
-    assert test_instance['dict', 'negative2'] == -2
-    assert test_instance.dict.object1 is test_object
-    assert test_instance.dict['object2'] is None
+    try:
+        # Testing
+        assert isinstance(test_instance, ReadonlyDict)
+        assert test_instance['first'] == 1
+        assert test_instance.second == 2
+        assert test_instance['string'] == 'abcde'
+        assert test_instance['int_list'][0] == 5
+        assert isinstance(test_instance['dict'], ReadonlyDict)
+        assert isinstance(test_instance.dict, ReadonlyDict)
+        assert test_instance['dict']['negative1'] == -1
+        assert test_instance['dict', 'negative2'] == -2
+        assert test_instance.dict.object1 is test_object
+        assert test_instance.dict['object2'] is None
+    except AssertionError as e:
+        print('ReadonlyDict test failed')
+        raise
     
     print('ReadonlyDict tests succeded')
 

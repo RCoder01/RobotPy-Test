@@ -46,15 +46,13 @@ class ConstantsType(NonwritableType):
                         obj = obj[item]
                     else:
                         obj = getattr(obj, item)
-                
-                return obj
         
         except AttributeError as e:
             raise KeyError(*e.args) from e
         except KeyError:
             raise
-
-        raise KeyError(f'Attribute(s) {name} not in {self}')
+        else:
+            return obj
     
     # Taken practically directly from types.SimpleNamespace documentation page
     def __repr__(self) -> str:
