@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from utils import ConstantsClass
+from src.lib.robotpy.utils import ConstantsClass
 
 
 # Any values with just a type hint are placeholders for the actual value

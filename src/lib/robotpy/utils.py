@@ -5,7 +5,7 @@ import warnings
 
 import commands2
 
-from pyutils import T, NonwritableType, SingletonType, remove_dunder_attrs
+from src.lib.py.utils import T, NonwritableType, SingletonType, remove_dunder_attrs
 
 
 class ConstantsType(NonwritableType):

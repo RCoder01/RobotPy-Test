@@ -374,6 +374,11 @@ Any names clashing with builtin python types or keywords can be suffixed with a 
 
 Objects should be named just as variables (everything in Python is an object, check with `variable.__bases__` or `type(variable).__bases__`).
 
+### **Packages & Modules**
+
+All modules (python files) should be named with snake_case
+
+
 ### **Jeff**
 
 Shooter velocity is Jeff

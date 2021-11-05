@@ -35,13 +35,3 @@ class Drivetrain(commands2.Subsystem):
     
     def tankDrive(self, leftSpeed: float, rightSpeed: float, squareInputs: bool = True) -> None:
         self.drive.tankDrive(leftSpeed, rightSpeed, squareInputs)
-
-"""
-class Elevator(commands2.PIDSubsystem):
-
-    def __init__(self):
-        super().__init__(wpilib.controller.PIDController(**constants.Elevator.kPIDConstants))
-        self.mMotors = wpilib.SpeedControllerGroup(
-            *[ctre.TalonFX(ID) for ID in constants.Elevator.kMotorIDs]
-        )
-"""
