@@ -1,5 +1,5 @@
 from __future__ import annotations
-from types import SimpleNamespace, _T
+from types import SimpleNamespace
 
 import commands2
 import ctre
