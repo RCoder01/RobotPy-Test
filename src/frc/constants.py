@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from lib.robotpy.utils import ConstantsClass
+from lib.robotpy.utils import ConstantsClass, IDList
 
 
 # Any values with just a type hint are placeholders for the actual value
@@ -11,12 +11,12 @@ class Interface(ConstantsClass):
 
 
 class Drivetrain(ConstantsClass):
-    kLeftMotorIDs: tuple[int]
-    kRightMotorIDs: tuple[int]
+    kLeftMotorIDs: IDList
+    kRightMotorIDs: IDList
 
 
 class Elevator(ConstantsClass):
-    kMotorIDs: tuple[int]
+    kMotorIDs: IDList
 
     class kPIDConstants(ConstantsClass):
         Kp: int

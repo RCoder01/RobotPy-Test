@@ -293,6 +293,13 @@ class SingletonType(type):
         return cls._instance
 
 
+def avg(*args: Any) -> Any:
+    """
+    Returns the average of the given arguments
+    """
+    return sum(args) / len(args)
+
+
 if __name__ == '__main__':
     print('Testing lib.py.utils')
 

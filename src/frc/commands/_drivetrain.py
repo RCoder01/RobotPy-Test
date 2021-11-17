@@ -13,14 +13,14 @@ import frc.subsystems as subsystems
 
 
 class default(commands2.CommandBase):
+    """
+    Sets drivetrain to arcade drive
+    """
     def __init__(
             self, 
             leftPowerSupplier: Callable[[], unit_float], 
             rightPowerSupplier: Callable[[], unit_float],
             ) -> None:
-        """
-        Sets drivetrain to arcade drive
-        """
         self.leftPowerSupplier = leftPowerSupplier
         self.rightPowerSupplier = rightPowerSupplier
         self.addRequirements(subsystems.drivetrain)
@@ -38,11 +38,11 @@ class default(commands2.CommandBase):
             deadzone(self.leftPowerSupplier()),
             deadzone(self.rightPowerSupplier()),
         )
+        return super().execute()
     
     def end(self, interrupted: bool) -> None:
-        """
-        """
         self.drivetrain.tankDrive(0, 0)
+        return super().end(interrupted)
     
     def isFinished(self) -> bool:
         return False

@@ -13,6 +13,7 @@ class Elevator(commands2.PIDSubsystem):
 
     def __init__(self):
         super().__init__(wpilib.controller.PIDController(**constants.Elevator.kPIDConstants))
+        self.mMotorList = [ctre.WPI_TalonFX(ID) for ID in constants.Elevator.kMotorIDs]
         self.mMotors = wpilib.SpeedControllerGroup(
-            *[ctre.TalonFX(ID) for ID in constants.Elevator.kMotorIDs]
+            *self.mMotorList
         )

@@ -14,12 +14,45 @@ import commands2
 from lib.py.utils import T, NonwritableType, SingletonType, remove_dunder_attrs
 
 
+def isCompetition():
+    return False
+
+
+class IDList(tuple):
+    def __new__(cls, ids: tuple[int] = (0, 0)) -> None:
+        return super().__new__(tuple, ids)
+
+
 class ConstantsType(NonwritableType):
     """Defines a get item and repr method"""
     def __new__(mcls: ConstantsType, clsname: str, bases: tuple, clsdict: dict) -> ConstantsType:
-        """Checks for potentially dubious keys attribute"""
+        """
+        Checks for potentially dubious keys attribute
+        and
+        replaces annotation-only values with default values
+        """
+
         if 'keys' in clsdict:
             warnings.warn('Defining a keys attribute may cause issues with "**" unpacking syntax', UserWarning)
+        
+        for name in clsdict.get('__annotations__', {}):
+            if name not in clsdict:
+                annotation = clsdict['__annotations__'][name]
+                annotation = eval(annotation) if isinstance(annotation, str) else annotation
+
+                err_text = f'{name} is only outlined in {clsname} as {annotation!s} (not defined)'
+                
+                try:
+                    annotation = annotation()
+                except TypeError:
+                    pass
+                else:
+                    err_text += f', replacing with default constructor value of {annotation!s}'
+                
+                warnings.warn(err_text, UserWarning)
+                
+                clsdict[name] = annotation
+        
         return super().__new__(mcls, clsname, bases, clsdict)
     
     @typing.overload
@@ -128,7 +161,7 @@ class CompetitionExceptionHandler:
         pass
 
     def __exit__(self, exc_type, exc_val, traceback):
-        # if allowable: # TODO: add proper competition checking
+        # if isCompetition(): # TODO: add proper competition checking
         #     log(exc_type, exc_val, traceback) # TODO: add proper logging
         #     return True
         return False
