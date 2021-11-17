@@ -6,7 +6,7 @@ import wpilib
 import wpilib.controller
 import wpilib.drive
 
-from src.frc import constants
+import frc.constants as constants
 
 
 class Elevator(commands2.PIDSubsystem):

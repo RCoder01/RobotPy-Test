@@ -1,4 +1,10 @@
 from __future__ import annotations
+if __name__ == '__main__':
+    import os
+    import site
+    os.chdir('src')
+    site.addsitedir(os.getcwd())
+
 import math
 import typing
 from typing import Any, Iterator, Type, TypeVar, Union
@@ -288,7 +294,7 @@ class SingletonType(type):
 
 
 if __name__ == '__main__':
-    print('Testing pyutils.py')
+    print('Testing lib.py.utils')
 
     test_object = object()
     

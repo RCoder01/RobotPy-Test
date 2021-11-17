@@ -2,8 +2,8 @@ from collections.abc import Callable
 
 import commands2
 
-from src.lib.py.utils import deadzone, unit_float
-import subsystems
+from lib.py.utils import deadzone, unit_float
+import frc.subsystems as subsystems
 
 
 class AutonomousCommand(commands2.CommandBase):

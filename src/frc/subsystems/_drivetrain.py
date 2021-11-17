@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from types import SimpleNamespace
 
 import commands2
@@ -7,7 +8,7 @@ import wpilib
 import wpilib.controller
 import wpilib.drive
 
-import constants
+import frc.constants as constants
 
 
 class Drivetrain(commands2.Subsystem):

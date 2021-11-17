@@ -1,11 +1,17 @@
 from __future__ import annotations
+if __name__ == '__main__':
+    import os
+    import site
+    os.chdir('src')
+    site.addsitedir(os.getcwd())
+
 import typing
 from typing import Any, Generator, Type
 import warnings
 
 import commands2
 
-from src.lib.py.utils import T, NonwritableType, SingletonType, remove_dunder_attrs
+from lib.py.utils import T, NonwritableType, SingletonType, remove_dunder_attrs
 
 
 class ConstantsType(NonwritableType):
@@ -119,7 +125,7 @@ class SingletonSubsystem(commands2.Subsystem, metaclass=SingletonSubsystemType):
 
 if __name__ == '__main__':
 
-    print('Testing utils.py')
+    print(f'Testing lib.robotpy.utils')
 
     test_object = object()
 
@@ -160,7 +166,7 @@ if __name__ == '__main__':
     except AssertionError as e:
         print(f'ConstantsClass test failed')
         raise
-
-    print('ConstantsClass tests succeded')
+    else:
+        print('ConstantsClass tests succeded')
 
     print('utils.py tests succeded')

@@ -1,10 +1,15 @@
+if __name__ == '__main__':
+    import os
+    import site
+    os.chdir('src')
+    site.addsitedir(os.getcwd())
+
 import commands2
 import wpilib
 import wpilib.drive
 
-import constants
-import subsystems
-
+import frc.constants as constants
+import frc.subsystems as subsystems
 
 class Robot(commands2.TimedCommandRobot):
     
@@ -38,7 +43,8 @@ class RobotContainer():
     def teleopPeriodic(self) -> None:
         pass
 
-    
+
 
 if __name__ == '__main__':
-    wpilib.run(Robot)
+    # wpilib.run(Robot)
+    print('robot :)')
