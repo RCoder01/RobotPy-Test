@@ -123,6 +123,17 @@ class SingletonSubsystem(commands2.Subsystem, metaclass=SingletonSubsystemType):
     __slots__ = ()
 
 
+class CompetitionExceptionHandler:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, traceback):
+        # if allowable: # TODO: add proper competition checking
+        #     log(exc_type, exc_val, traceback) # TODO: add proper logging
+        #     return True
+        return False
+
+
 if __name__ == '__main__':
 
     print(f'Testing lib.robotpy.utils')
@@ -170,3 +181,11 @@ if __name__ == '__main__':
         print('ConstantsClass tests succeded')
 
     print('utils.py tests succeded')
+
+    try:
+        with CompetitionExceptionHandler():
+            raise ValueError()
+    except TypeError:
+        pass
+    else:
+        raise AssertionError()

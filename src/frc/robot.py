@@ -11,8 +11,8 @@ import wpilib.drive
 import frc.constants as constants
 import frc.subsystems as subsystems
 
+
 class Robot(commands2.TimedCommandRobot):
-    
     def robotInit(self) -> None:
         self.container = RobotContainer()
 
@@ -36,13 +36,11 @@ class RobotContainer():
 
         self.drivetrain = subsystems.Drivetrain()
 
-    
     def getAutonomousCommand(self) -> commands2.Command:
         pass
 
     def teleopPeriodic(self) -> None:
         pass
-
 
 
 if __name__ == '__main__':
