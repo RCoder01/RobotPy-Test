@@ -6,56 +6,32 @@ if __name__ == '__main__':
     site.addsitedir(os.getcwd())
 
 import math
-import typing
-from typing import Any, Iterator, Type, TypeVar, Union
 
 
-T = TypeVar('T')
+class ValueRange: ...
 
 
 class unit_float(float):
-    """A floating point number value between -1 and 1"""
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if not(-1 <= self <= 1):
             raise ValueError('unit_float must be in range [-1, 1]')
-        
+
+
+def clamp(value, min_value, max_value):
+    return max(min(value, max_value), min_value)
+
 
 def deadzone(
-        input: unit_float,
-        power: float = 2,
-        lower_maxzone: unit_float = -1,
-        lower_deadzone: unit_float = -0.1,
-        higher_deadzone: unit_float = 0.1,
-        higher_maxzone: unit_float = 1,
-        ) -> unit_float:
-    """
-    Highly customizable deadzone function, 
-    Follows equations at https://www.desmos.com/calculator/yt5brsfh1m
-
-    :param input:
-    The value to be set into deadzone
-    :param power:
-    The power to which the function should be taken;
-    1 is linear, 2 is quadratic, etc.
-    :param lower_maxzone:
-    The negative point past which all inputs return -1
-    :param lower_deadzone:
-    The negative point past which all less inputs return 0
-    :param higher_deadzone:
-    The positive point past which all less inputs return 0
-    :param higher_maxzone:
-    The positive point at which all past inputs return 1
-
-    :returns:
-    Input modified by the different parameters
-
-    Values must follow:
-    -1 <= lower_maxzone < lower_deadzone <= 0
-    <= higher_deadzone < higher_maxzone <= 1
-    or ValueError will be raised
-    """
+        input,
+        power=2,
+        lower_maxzone=-1,
+        lower_deadzone=-0.1,
+        higher_deadzone=0.1,
+        higher_maxzone=1,
+        ):
     if not(
         -1 <= lower_maxzone < lower_deadzone <= 0
         <= higher_deadzone < higher_maxzone <= 1
@@ -92,51 +68,9 @@ def remove_dunder_attrs(dict_: dict) -> dict:
 
 
 class ReadonlyDict:
-    """
-    Dictionary-like object which stores key-value pairs
-
-    Values can be accessed using the following notations: 
-    ReadonlyDictObject[key],
-    ReadonlyDictObject.key
-
-    When the ReadonlyDict object is initialized, any nested dictionaries 
-    (dictionary values) 
-    are automatically converted to other ReadonlyDict objects
-
-    Nested values can be accessed with the following notations 
-    (works for more than two as well):
-    ReadonlyDictObject[key1][key2],
-    ReadonlyDictObject[key1, key2],
-    ReadonlyDictObject[(key1, key2)],
-    ReadonlyDictObject.key1.key2
-
-    ReadonlyDictObject.key1 returns another ReadonlyDict object 
-    with only the nested values
-    """
     __slots__ = '_dict',
 
-    @typing.overload
-    def __init__(self, values: dict[str, Any] = None) -> None:
-        """
-        Initialize a read-only dictionary from a preexisting dictionary;
-        Keys must be str
-        """
-    
-    @typing.overload
-    def __init__(self, *args: Union[list, tuple][tuple[str, Any]]) -> None:
-        """
-        Initialize a read-only dictionary from a list/tuple of key-value pairs;
-        Keys must be str
-        """
-    
-    @typing.overload
-    def __init__(self, **kwargs) -> None:
-        """
-        New read-only dictionary initialized with the name=value pairs
-        Can also be used in addition to other initialization methods
-        """
-
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs):
         if not args:
             values = {}
         
@@ -167,16 +101,8 @@ class ReadonlyDict:
                 self._dict[k] = v
         
         return super().__init__()
-
-    @typing.overload
-    def __getitem__(self, name: str) -> Any:
-        """Get item from key"""
-
-    @typing.overload
-    def __getitem__(self, name: tuple[str]) -> Any:
-        """Get nested item from tuple of keys"""
-
-    def __getitem__(self, name) -> Any:
+    
+    def __getitem__(self, name):
         if isinstance(name, str):
             if name in self._getdict():
                 return self._getdict()[name]
@@ -201,7 +127,7 @@ class ReadonlyDict:
             'does not match required type of (str, tuple)'
         )
     
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str):
         try:
             return self[name]
         except KeyError as e:
@@ -210,31 +136,31 @@ class ReadonlyDict:
     def _getdict(self) -> dict:
         return object.__getattribute__(self, '_dict')
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self):
         return self._getdict().keys()
 
-    def __str__(self) -> Any:
+    def __str__(self):
         return str(self._getdict())
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise AttributeError('Constants cannot be changed')
+    def __setattr__(self, name: str, value) -> None:
+        raise TypeError(f"type '{__class__}' does not support attribute assignment")
     
-    def __setitem__(self, name: str, value: Any) -> None:
-        raise AttributeError('Constants cannot be changed')
+    def __setitem__(self, name: str, value) -> None:
+        raise TypeError(f"type '{__class__}' does not support item assignment")
     
     def __delattr__(self, name: str) -> None:
-        raise AttributeError('Constants cannot be deleted')
+        raise TypeError(f"type '{__class__}' does not support attribute deletion")
     
     def __delitem__(self, name: str) -> None:
-        raise AttributeError('Constants cannot be deleted')
+        raise TypeError(f"type '{__class__}' does not support item deletion")
 
-    def __contains__(self, name: str) -> Any:
+    def __contains__(self, name: str):
         return name in self._getdict().keys()
     
     def __repr__(self) -> str:
         return f'constantdict({dict(self._getdict())})'
     
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other) -> bool:
         if isinstance(other, dict):
             return self._getdict() == other
         if isinstance(other, ReadonlyDict):
@@ -246,16 +172,9 @@ class ReadonlyDict:
 
 
 class NonwritableType(type):
-    """
-    When as metaclass, prevents any attribute from being set or deleted\n
-    Mutable atttributes can still be modifed\n
-    In the event an attribute must be modified, 
-    'object.__setattr__(object, name, value)' or 
-    'object.__delattr__(object, name)'
-    can be used
-    """
+    __slots__ = ()
     
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value) -> None:
         raise TypeError('Nonwritable attributes cannot be set')
 
     def __delattr__(self, name: str) -> None:
@@ -263,40 +182,27 @@ class NonwritableType(type):
 
 
 class SingletonType(type):
-    """
-    Metaclass for singleton classes
-    """
+    __slots__ = ()
+
     def __new__(
             mcls: SingletonType,
             clsname: str,
             bases: tuple,
             clsdict: dict,
             ) -> SingletonType:
-        """
-        Updates clsdict with _instance attribute
-        """
         clsdict.update({'_instance': None})
         return super().__new__(mcls, clsname, bases, clsdict)
 
-    def __call__(cls: Type[T], *args: Any, **kwargs: Any) -> T:
-        """
-        Overrides call phrasing of __new__ to prevent __init__ calls
-        """
+    def __call__(cls, *args, **kwargs):
         return cls.get_instance(*args, **kwargs)
 
-    def get_instance(cls: Type[T], *args, **kwargs) -> T:
-        """
-        Uses _instance attribute to check if an instance already exists
-        """
+    def get_instance(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = cls.__new__(*args, **kwargs)
         return cls._instance
 
 
-def avg(*args: Any) -> Any:
-    """
-    Returns the average of the given arguments
-    """
+def avg(*args):
     return sum(args) / len(args)
 
 

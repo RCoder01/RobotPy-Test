@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from collections import Callable
 
@@ -9,7 +8,7 @@ from lib.py.utils import (
     deadzone,
     unit_float,
 )
-import frc.subsystems as subsystems
+from frc import subsystems
 
 
 class default(commands2.CommandBase):

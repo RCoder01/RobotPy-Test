@@ -11,23 +11,19 @@ import wpilib.drive
 
 import frc.constants as constants
 from lib.py.utils import avg
-from lib.robotpy.ctre import getTalonEncoders
+from lib.robotpy.ctre import WPI_TalonFXCollection, getTalonEncoders
 
 
 class Drivetrain(commands2.Subsystem):
     def __init__(self):
         super().__init__()
 
-        self.mMotors = SimpleNamespace()
-        self.mMotors.leftList = [ctre.WPI_TalonFX(ID) for ID in constants.Drivetrain.kLeftMotorIDs]
-        self.mMotors.rightList = [ctre.WPI_TalonFX(ID) for ID in constants.Drivetrain.kRightMotorIDs]
-        
-        self.mMotors.left = wpilib.SpeedControllerGroup(*self.mMotors.leftList)
-        self.mMotors.right = wpilib.SpeedControllerGroup(*self.mMotors.rightList)
+        self.mLeftMotors = WPI_TalonFXCollection(constants.Drivetrain.kLeftMotorIDs)
+        self.mRightMotors = WPI_TalonFXCollection(constants.Drivetrain.kRightMotorIDs)
 
         self.mDrive = wpilib.drive.DifferentialDrive(
-            self.mMotors.left,
-            self.mMotors.right,
+            self.mLeftMotors,
+            self.mRightMotors,
         )
 
     def arcadeDrive(self, forward: float, turning: float) -> None:
@@ -41,6 +37,7 @@ class Drivetrain(commands2.Subsystem):
             motor.getSensorCollection().setQuadraturePosition(0, 0)
     
     def getLeftEncoderPosition(self) -> float:
+        self.mLeftMotors.getSelectedSensorPosition()
         return avg(map(TalonFXSensorCollection.getIntegratedSensorPosition, getTalonEncoders(self.mMotors.left)))
         
     def getRightEncoderPosition(self) -> float:

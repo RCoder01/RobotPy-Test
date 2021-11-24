@@ -6,7 +6,7 @@ if __name__ == '__main__':
     site.addsitedir(os.getcwd())
 
 import typing
-from typing import Any, Generator, Type
+from typing import Any, Generator, Iterator, Type
 import warnings
 
 import commands2
@@ -35,12 +35,12 @@ class ConstantsType(NonwritableType):
         if 'keys' in clsdict:
             warnings.warn('Defining a keys attribute may cause issues with "**" unpacking syntax', UserWarning)
         
-        for name in clsdict.get('__annotations__', {}):
+        annotations = clsdict.get('__annotations__', {})
+        for name, type_ in annotations.items():
             if name not in clsdict:
-                annotation = clsdict['__annotations__'][name]
-                annotation = eval(annotation) if isinstance(annotation, str) else annotation
+                type_ = eval(type_)
 
-                err_text = f'{name} is only outlined in {clsname} as {annotation!s} (not defined)'
+                err_text = f'{name} is only outlined in {clsname} as {type_!s} (not defined)'
                 
                 try:
                     annotation = annotation()
@@ -102,7 +102,7 @@ class ConstantsType(NonwritableType):
     def items(self) -> tuple:
         return tuple((k, v) for k, v in remove_dunder_attrs(self.__dict__).items())
     
-    def __iter__(self) -> Generator:
+    def __iter__(self) -> Iterator[str]:
         return self.keys().__iter__()
 
 
