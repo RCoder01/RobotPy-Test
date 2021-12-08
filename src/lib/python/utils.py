@@ -1,4 +1,5 @@
 from __future__ import annotations
+import functools
 if __name__ == '__main__':
     import os
     import site
@@ -11,13 +12,7 @@ import math
 class ValueRange: ...
 
 
-class unit_float(float):
-    __slots__ = ()
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        if not(-1 <= self <= 1):
-            raise ValueError('unit_float must be in range [-1, 1]')
+unit_float = None
 
 
 def clamp(value, min_value, max_value):
@@ -204,6 +199,47 @@ class SingletonType(type):
 
 def avg(*args):
     return sum(args) / len(args)
+
+
+@functools.singledispatch
+def optional_average_method_wrapper(
+        method_or_attr_name,
+        object_list: list, 
+        average_default=False
+        ):
+    pass
+
+@optional_average_method_wrapper.register
+def _(method, object_list: list, average_default=False):
+    
+    @functools.wraps(method)
+    def wrapper(*args, average=average_default, **kwargs):
+        val_list = [method(self, *args, **kwargs) for self in object_list]
+    
+        if average:
+            return avg(val_list)
+        return val_list
+
+    return wrapper
+
+@optional_average_method_wrapper.register
+def _(attr_name: str, object_list: list, average_default=False):
+    
+    def wrapper(*args, average=average_default, **kwargs):
+        attr_list = []
+        
+        for obj in object_list:
+            attr = getattr(obj, attr_name)
+            if callable(attr):
+                attr_list.append(attr(*args, **kwargs))
+            else:
+                attr_list.append(attr)
+    
+        if average:
+            return avg(attr_list)
+        return attr_list
+
+    return wrapper
 
 
 if __name__ == '__main__':

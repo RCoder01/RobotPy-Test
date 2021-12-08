@@ -4,12 +4,17 @@ if __name__ == '__main__':
     os.chdir('src')
     site.addsitedir(os.getcwd())
 
+import warnings
 import commands2
 import wpilib
 import wpilib.drive
 
 import frc.constants as constants
 import frc.subsystems as subsystems
+
+from lib.robotpy.utils import isCompetition
+if not isCompetition():
+    warnings.filterwarnings('error')
 
 
 class Robot(commands2.TimedCommandRobot):

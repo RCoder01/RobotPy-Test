@@ -4,7 +4,7 @@ import ctre
 import wpilib
 from wpilib import SpeedControllerGroup
 
-from lib.py.utils import avg, T
+from lib.python.utils import optional_average_method_wrapper
 
 
 def getTalonEncoders(*talons: ctre.WPI_TalonFX
@@ -14,48 +14,6 @@ def getTalonEncoders(*talons: ctre.WPI_TalonFX
         ]:
     if len(talons) == 1:
         return talons[0].getSensorCollection()
-    return tuple(talon.getSensorCollection() for talon in talons)
-
-
-@functools.singledispatch
-def optional_average_method_wrapper(
-        method_or_attr_name: Union[Callable, str],
-        object_list: list, 
-        average_default=False
-        ):
-    pass
-
-@optional_average_method_wrapper.register
-def _(method: Callable, object_list: list, average_default=False):
-    
-    @functools.wraps(method)
-    def wrapper(*args, average=average_default, **kwargs):
-        val_list = [method(self, *args, **kwargs) for self in object_list]
-    
-        if average:
-            return avg(val_list)
-        return val_list
-
-    return wrapper
-
-@optional_average_method_wrapper.register
-def _(attr_name: str, object_list: list, average_default=False):
-    
-    def wrapper(*args, average=average_default, **kwargs):
-        attr_list = []
-        
-        for obj in object_list:
-            attr = getattr(obj, attr_name)
-            if callable(attr):
-                attr_list.append(attr(*args, **kwargs))
-            else:
-                attr_list.append(attr)
-    
-        if average:
-            return avg(attr_list)
-        return attr_list
-
-    return wrapper
 
 
 # def optional_average_map_wrapper(
@@ -130,26 +88,26 @@ class WPI_TalonFXCollection(wpilib.SpeedControllerGroup):
         return self.__getattr__(name, list_)
 
 
-@final
-class TalonFXSensorCollectionCollection():
-    """
-    Acts as a TalonFXSensorCollection which returns optionally averaged sensor values for a list of sensors.
-    """
-    __slots__ = 'mSensors',
+# @final
+# class TalonFXSensorCollectionCollection():
+#     """
+#     Acts as a TalonFXSensorCollection which returns optionally averaged sensor values for a list of sensors.
+#     """
+#     __slots__ = 'mSensors',
 
-    def __init__(self, *args: ctre.TalonFXSensorCollection) -> None:
-        self.mSensors = args
+#     def __init__(self, *args: ctre.TalonFXSensorCollection) -> None:
+#         self.mSensors = args
 
-    def __getattribute__(self, name: str) -> Any:
-        if name in __class__.__slots__:
-            return object.__getattribute__(self, name)
+#     def __getattribute__(self, name: str) -> Any:
+#         if name in __class__.__slots__:
+#             return object.__getattribute__(self, name)
         
-        super_attr = ctre.TalonFXSensorCollection.__getattribute__(name)
+#         super_attr = ctre.TalonFXSensorCollection.__getattribute__(name)
         
-        if callable(super_attr):
-            return optional_average_method_wrapper(
-                name,
-                self.mSensors,
-            )
+#         if callable(super_attr):
+#             return optional_average_method_wrapper(
+#                 name,
+#                 self.mSensors,
+#             )
         
-        return super_attr
+#         return super_attr

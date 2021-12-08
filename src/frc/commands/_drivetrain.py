@@ -4,7 +4,7 @@ if TYPE_CHECKING:
 
 import commands2
 
-from lib.py.utils import (
+from lib.python.utils import (
     deadzone,
     unit_float,
 )

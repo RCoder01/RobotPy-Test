@@ -10,7 +10,7 @@ import wpilib.controller
 import wpilib.drive
 
 import frc.constants as constants
-from lib.py.utils import avg
+from lib.python.utils import avg
 from lib.robotpy.ctre import WPI_TalonFXCollection, getTalonEncoders
 
 

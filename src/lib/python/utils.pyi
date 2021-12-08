@@ -5,6 +5,13 @@ T = typing.TypeVar('T')
 
 
 class ValueRange:
+    """
+    Type annotation for ranged values
+
+    SHOULD NOT BE USED FUNTIONALLY AT RUNTIME;
+    only defined for type-checking purposes
+    (exists as a blank class at runtime)
+    """
     def __init__(self, value, min_value: T, max_value: T):
         if not min_value <= max_value:
             raise ValueError('min_value must be less than max_value')
@@ -188,4 +195,31 @@ class SingletonType(type):
 def avg(*args: typing.Any) -> typing.Any:
     """
     Returns the average of the given arguments
+    """
+
+
+@typing.overload
+def optional_average_method_wrapper(
+        method_name: typing.Callable,
+        object_list: list,
+        average_default = False,
+        ) -> typing.Callable:
+    """
+    Wraps the given method such that it adds and average keyword argument to the method call.
+
+    If average is True, the method will return the average of the values returned by the method call.
+    If average is False, the method will return the list of values returned by the method call.
+    """
+
+@typing.overload
+def optional_average_method_wrapper(
+        attr_name: str,
+        object_list: list,
+        average_default = False,
+        ) -> typing.Callable:
+    """
+    Wraps the given method such that it adds and average keyword argument to the method call.
+
+    If average is True, the method will return the average of the values returned by the method call.
+    If average is False, the method will return the list of values returned by the method call.
     """

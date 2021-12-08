@@ -6,12 +6,21 @@ if __name__ == '__main__':
     site.addsitedir(os.getcwd())
 
 import typing
-from typing import Any, Generator, Iterator, Type
+from typing import (
+    Any,
+    Iterator,
+    Type,
+)
 import warnings
 
 import commands2
 
-from lib.py.utils import T, NonwritableType, SingletonType, remove_dunder_attrs
+from lib.python.utils import (
+    T,
+    NonwritableType,
+    SingletonType,
+    remove_dunder_attrs,
+)
 
 
 def isCompetition():
@@ -156,15 +165,17 @@ class SingletonSubsystem(commands2.Subsystem, metaclass=SingletonSubsystemType):
     __slots__ = ()
 
 
-class CompetitionExceptionHandler:
+class CompetitionExceptionHandler(warnings.catch_warnings):
     def __enter__(self):
-        pass
+        return super().__enter__()
 
     def __exit__(self, exc_type, exc_val, traceback):
         # if isCompetition(): # TODO: add proper competition checking
         #     log(exc_type, exc_val, traceback) # TODO: add proper logging
         #     return True
         return False
+
+
 
 
 if __name__ == '__main__':
