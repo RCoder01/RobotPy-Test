@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-robotpy = {extras = ["commands2", "ctre", "rev", "sim"], version = "*"}
+robotpy = {extras = ["commands2", "rev", "sim"], version = "*"}
 
 [dev-packages]
 
