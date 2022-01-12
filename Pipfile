@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 robotpy = {extras = ["commands2", "rev", "sim"], version = "*"}
+keyboard = "*"
 
 [dev-packages]
 
