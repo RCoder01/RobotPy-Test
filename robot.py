@@ -1,5 +1,6 @@
 from rev import CANSparkMax, MotorType
 import commands2
+import commands2.button
 import wpilib
 import wpilib.interfaces
 import wpilib.drive
@@ -81,11 +82,11 @@ class Robot(commands2.TimedCommandRobot):
     
     def teleopPeriodic(self):
         self.drivetrain.arcadeDrive(
-            deadzone(self.driver.getY(wpilib.interfaces.GenericHID.Hand.kRightHand)),
-            deadzone(self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand))
+            (self.driver.getXButton() or self.driver.getYButton()) * ((not self.driver.getXButton()) - 0.5) * (1 + self.driver.getBButton()),
+            -self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand)
         ) # Y is forward/backward, X is left/right
-        # wpilib.SmartDashboard.putNumber("Driver Y", self.driver.getY(wpilib.interfaces.GenericHID.Hand.kRightHand))
-        # wpilib.SmartDashboard.putNumber("Driver X", self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand))
+        wpilib.SmartDashboard.putNumber("Driver Y", self.driver.getY(wpilib.interfaces.GenericHID.Hand.kRightHand))
+        wpilib.SmartDashboard.putNumber("Driver X", self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand))
 
 if __name__ == '__main__':
     wpilib.run(Robot)
