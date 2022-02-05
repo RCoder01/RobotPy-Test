@@ -75,15 +75,23 @@ def deadzone(
 RATE_LIMIT = 0.05
 
 class RateLimiter:
-    def __init__(self, rate = RATE_LIMIT):
+    def __init__(self, rate=RATE_LIMIT, decay_rate=None):
         self._rate = rate
         self._last_value = 0
+        self._decay_rate = decay_rate
 
     def __call__(self, value):
         if not self._rate:
             return value
 
-        self._last_value = max(min(value, self._last_value + self._rate), self._last_value - self._rate)
+        if self._decay_rate:
+            if self._last_value < 0:
+                self._last_value = min(max(value, self._last_value - self._rate), self._last_value + self._decay_rate)
+            else:
+                self._last_value = max(min(value, self._last_value + self._rate), self._last_value - self._decay_rate)
+        else:
+            self._last_value = max(min(value, self._last_value + self._rate), self._last_value - self._rate)
+
         return self._last_value
 
 class Robot(commands2.TimedCommandRobot):
@@ -96,15 +104,14 @@ class Robot(commands2.TimedCommandRobot):
 
         self.driver = wpilib.XboxController(0)
 
-        self._left_rate_limiter = RateLimiter()
-        self._right_rate_limiter = RateLimiter()
+        self._fwd_rate_limiter = RateLimiter(RATE_LIMIT, RATE_LIMIT * 0.3)
+        self._turn_rate_limiter = RateLimiter(0)
 
     def teleopPeriodic(self):
-        fwd = deadzone(self._left_rate_limiter(self.driver.getY(wpilib.interfaces.GenericHID.Hand.kRightHand)))
-        turn = deadzone(self._right_rate_limiter(-self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand)))
-        for motor in self.leftMotors:
-            motor.set(fwd)
-        self.drivetrain.tankDrive(
+        fwd = self._fwd_rate_limiter(deadzone(self.driver.getY(wpilib.interfaces.GenericHID.Hand.kRightHand)))
+        turn = self._turn_rate_limiter(deadzone(-self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand)))
+
+        self.drivetrain.arcadeDrive(
             fwd,
             turn,
         ) # Y is forward/backward, X is left/right
