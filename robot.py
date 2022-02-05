@@ -1,10 +1,12 @@
-from rev import CANSparkMax, MotorType
 import commands2
 import commands2.button
+import math
+import rev
 import wpilib
 import wpilib.interfaces
 import wpilib.drive
-import math
+import wpilib.controller
+import wpimath
 
 def deadzone(
         input,
@@ -70,23 +72,44 @@ def deadzone(
     if higher_maxzone <= input:
         return 1
 
+RATE_LIMIT = 0.05
+
+class RateLimiter:
+    def __init__(self, rate = RATE_LIMIT):
+        self._rate = rate
+        self._last_value = 0
+
+    def __call__(self, value):
+        if not self._rate:
+            return value
+
+        self._last_value = max(min(value, self._last_value + self._rate), self._last_value - self._rate)
+        return self._last_value
+
 class Robot(commands2.TimedCommandRobot):
     def robotInit(self):
-        self.leftMotors = [CANSparkMax(ID, MotorType.kBrushless) for ID in (15, 14, 13)]
-        self.rightMotors = [CANSparkMax(ID, MotorType.kBrushless) for ID in (1, 2, 20)]
+        self.leftMotors = [rev.CANSparkMax(ID, rev.MotorType.kBrushless) for ID in (15, 14, 13)]
+        self.rightMotors = [rev.CANSparkMax(ID, rev.MotorType.kBrushless) for ID in (1, 2, 20)]
         self.leftMotorController = wpilib.SpeedControllerGroup(*self.leftMotors)
         self.rightMotorController = wpilib.SpeedControllerGroup(*self.rightMotors)
         self.drivetrain = wpilib.drive.DifferentialDrive(self.leftMotorController, self.rightMotorController)
-        
+
         self.driver = wpilib.XboxController(0)
-    
+
+        self._left_rate_limiter = RateLimiter()
+        self._right_rate_limiter = RateLimiter()
+
     def teleopPeriodic(self):
-        self.drivetrain.arcadeDrive(
-            (self.driver.getXButton() or self.driver.getYButton()) * ((not self.driver.getXButton()) - 0.5) * (1 + self.driver.getBButton()),
-            -self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand)
+        fwd = deadzone(self._left_rate_limiter(self.driver.getY(wpilib.interfaces.GenericHID.Hand.kRightHand)))
+        turn = deadzone(self._right_rate_limiter(-self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand)))
+        for motor in self.leftMotors:
+            motor.set(fwd)
+        self.drivetrain.tankDrive(
+            fwd,
+            turn,
         ) # Y is forward/backward, X is left/right
-        wpilib.SmartDashboard.putNumber("Driver Y", self.driver.getY(wpilib.interfaces.GenericHID.Hand.kRightHand))
-        wpilib.SmartDashboard.putNumber("Driver X", self.driver.getX(wpilib.interfaces.GenericHID.Hand.kLeftHand))
+        wpilib.SmartDashboard.putNumber("Driver Y", fwd)
+        wpilib.SmartDashboard.putNumber("Driver X", turn)
 
 if __name__ == '__main__':
     wpilib.run(Robot)
